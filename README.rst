@@ -81,40 +81,6 @@ FInally, the last command:
 
 Most of the open source solvers that are supported by CVXPY (the optimization library used in Hypatia), will be installed
 automatically with the software. For the commercial solvers, you should follow the specific installation methods. 
-When Hypatia is installed, you can strat to use the embedded examples as a quick start:
-
-.. code-block:: python
-
-    from hypatia import load_example
-
-    # Loading the planning example
-    planning = load_example('Planning')
-
-    # Loading the Operation example
-    operation = load_example('Operation')
-
-    # See the configuration of systems
-    print(planning)
-    print(operation)
-
-    # see the description of systems
-    print(planning.description)
-    print(operation.description)
-
-    # Running models
-    planning.run(solver='glpk')
-
-    # Save the results
-    planning.to_csv(path= '../save/directory')
-
-If you want to see the structure of inputs and how the examples are built, you can download the data files to a specific place in your machine:
-
-.. code-block:: python
-
-    from hypatia import download_example
-
-    # Downloading the Planning example
-    download_example(example='Planning', destination_path='Where/To/Save')
 
 
 Python module requirements
