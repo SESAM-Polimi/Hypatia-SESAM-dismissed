@@ -83,7 +83,7 @@ plots.plot_total_capacity(
 )
 
 #%% 
-# For each region, plot the annual production of each technology in the tech_group in each year and save it in the plots folder 
+# Plot the annual production of each technology in the tech_group in each year and save it in the plots folder 
 
 plots.plot_prod_by_tech(
     path = 'examples/Operation/plots_operation/prod_by_tech.html',      # Path to the folder in which the plot will be saved
@@ -94,7 +94,7 @@ plots.plot_prod_by_tech(
 )
 
 #%% 
-# For each region, plot the annual consumption of each carrier in the fuel_group in each year and save it in the plots folder 
+# Plot the annual consumption of each carrier in the fuel_group in each year and save it in the plots folder 
 
 plots.plot_use_by_technology(
     path = 'examples/Operation/plots_operation/use_by_tech.html',       # Path to the folder in which the plot will be saved
@@ -105,7 +105,7 @@ plots.plot_use_by_technology(
 )
 
 #%%
-# For each region, plot as Pie chart the annual consumption and production of each carrier in the fuel_group for a specific year and save it in the plots folder
+# Plot as Pie chart the annual consumption and production of each carrier in the fuel_group for a specific year and save it in the plots folder
 
 plots.plot_fuel_prod_cons(
     path = 'examples/Operation/plots_operation/prod_con_share__.html',  # Path to the folder in which the plot will be saved
@@ -125,7 +125,7 @@ plots.plot_emissions(
     emission_type = ["CO2"],                                            # The type of the emissions, reported in the configuration file, to be plotted
     kind="bar",                                                         # "Bar" or "Area" are the two kind of plots accepted
     regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
-    aggregate=False                                                     # Global emission can be plotted (True) or emission for each region (False)
+    aggregate=True                                                     # Global emission can be plotted (True) or emission for each region (False)
 )
 
 #%%

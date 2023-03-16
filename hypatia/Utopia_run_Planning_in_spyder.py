@@ -83,7 +83,7 @@ plots.plot_total_capacity(
 )
 
 #%% 
-# For each region, plot the new capacity of each technology in the tech_group in each year and save it in the plots folder 
+# Plot the new capacity of each technology in the tech_group in each year and save it in the plots folder 
 
 plots.plot_new_capacity(
     path = 'examples/Planning/plots_planning/newcapacity.html',         # Path to the folder in which the plot will be saved
@@ -95,7 +95,7 @@ plots.plot_new_capacity(
 )
 
 #%% 
-# For each region, plot the annual production of each technology in the tech_group in each year and save it in the plots folder 
+# Plot the annual production of each technology in the tech_group in each year and save it in the plots folder 
 
 plots.plot_prod_by_tech(
     path = 'examples/Planning/plots_planning/prod_by_tech.html',        # Path to the folder in which the plot will be saved
@@ -106,7 +106,7 @@ plots.plot_prod_by_tech(
 )
 
 #%% 
-# For each region, plot the annual consumption of each carrier in the fuel_group in each year and save it in the plots folder 
+# Plot the annual consumption of each carrier in the fuel_group in each year and save it in the plots folder 
 
 plots.plot_use_by_technology(
     path = 'examples/Planning/plots_planning/use_by_tech.html',         # Path to the folder in which the plot will be saved
@@ -117,7 +117,7 @@ plots.plot_use_by_technology(
 )
 
 #%%
-# For each region, plot as Pie chart the annual consumption and production of each carrier in the fuel_group for a specific year and save it in the plots folder
+# Plot as Pie chart the annual consumption and production of each carrier in the fuel_group for a specific year and save it in the plots folder
 
 plots.plot_fuel_prod_cons(
     path = 'examples/Planning/plots_planning/prod_con_share__.html',    # Path to the folder in which the plot will be saved

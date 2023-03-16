@@ -274,11 +274,23 @@ class ModelVariables():
                     self.model_data.settings.years,
                     self.model_data.settings.time_steps,
                 )
-
+                
+                multiplier = 8760/len(self.model_data.settings.time_steps)
                 cost_variable_regional[key] = cp.multiply(
-                    production_annual_regional[key],
+                    production_annual_regional[key]*multiplier,
                     self.model_data.regional_parameters[reg]["tech_var_cost"].loc[:, key],
                 )
+                
+                # if len(self.model_data.settings.time_steps) == 24:
+                #     cost_variable_regional[key] = cp.multiply(
+                #         production_annual_regional[key]*365,
+                #         self.model_data.regional_parameters[reg]["tech_var_cost"].loc[:, key],
+                #     )
+                # else:
+                #     cost_variable_regional[key] = cp.multiply(
+                #         production_annual_regional[key],
+                #         self.model_data.regional_parameters[reg]["tech_var_cost"].loc[:, key],
+                #     )
 
 
                 cost_fvalue_regional[key] = invcosts_annuity(

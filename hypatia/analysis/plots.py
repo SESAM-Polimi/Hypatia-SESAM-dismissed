@@ -1106,9 +1106,8 @@ class Plotter:
         
         techs = self.configs["techs"]
         techs = list(techs[techs["tech_group"].isin(str2ls(tech_group))].index)
-        
         emission_name = self.configs["emissions"]
-        emission_name = emission_name[emission_name["emission_name"].isin(str2ls(emission_type))].index
+        emission_name = list(emission_name[emission_name["emission_name"].isin(str2ls(emission_type))].index)
         unit = list(self.configs["emissions"].loc[emission_name, "emission_unit"])
 
         if regions == "all":
@@ -1118,7 +1117,7 @@ class Plotter:
             raise ValueError(f"No tech found for category {tech_group}.")
         fig = go.Figure()
         counter = []
-
+        
         if aggregate:
             legends = set()
         for step_index, types in enumerate(emission_name):
