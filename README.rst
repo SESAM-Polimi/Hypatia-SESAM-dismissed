@@ -31,8 +31,8 @@ What is it
 Hypatia is an open source modelling framework written in Python that provides
 a technology-rich basis for optimizing both the operation and planning mode of
 the energy systems in short-term and long-term time horizons. Hypatia is able
-to analyze various energy transition scnerios based on different policies such
-as coal phase out, carbon taxes, renewable incetives and other national and
+to analyze various energy transition scenarios based on different policies such
+as coal phase out, carbon taxes, renewable incentives and other national and
 international pledges for the possible future energy systems.
 
 Quickstart
@@ -65,7 +65,7 @@ Then, you can download the code version you are interesting in and save in any f
 
     cd "path"
     
-"path" of local folder in which you placed the calliope folder you just downloaded e.g. C:\Users\YourUser\GitHub\Hypatia. 
+"path" of local folder in which you placed the Hypatia folder you just downloaded e.g. C:\Users\YourUser\GitHub\Hypatia. 
 Inside the path digit:
 
 .. code-block:: bash
