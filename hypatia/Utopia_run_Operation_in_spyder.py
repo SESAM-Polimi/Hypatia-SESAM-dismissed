@@ -71,6 +71,11 @@ plots = Plotter(
 )
 
 #%% 
+# Create folder for the plots
+
+os.mkdir("examples/Operation_teaching/plots/") 
+
+#%% 
 # Plot the total capacity of each technology in the tech_group in each year and save it in the plots folder 
 
 plots.plot_total_capacity(
@@ -111,7 +116,7 @@ plots.plot_fuel_prod_cons(
     path = 'examples/Operation/plots_operation/prod_con_share__.html',  # Path to the folder in which the plot will be saved
     years = ["Y0"],                                                     # Year considered 
     fuel_group = 'Electricity',                                         # The group of the carriers, reported in the configuration file, to be plotted
-    trade=False,                                                        # Trade can be included (True) or not (False)
+    trade=True,                                                        # Trade can be included (True) or not (False)
     regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
     aggregate=False                                                     # True to aggregate the results of each region, False to plot them separately
 )
@@ -137,8 +142,8 @@ plots.plot_hourly_prod_by_tech(
     fuel_group = 'Electricity',                                         # The group of the carriers, reported in the configuration file, to be plotted
     kind = "bar",                                                       # "Bar" or "Area" are the two kind of plots accepted
     year = ["Y0"],                                                      # Year considered 
-    start="01-01-2019 00:00:00",                                        # Starting day and time 
-    end="01-01-2019 23:00:00",                                          # Ending day and time
+    start="2020-01-01 00:00:00",                                        # Starting day and time ("YYYY-MM-DD hh:mm:ss")
+    end="2020-01-01 23:00:00",                                          # Ending day and time ("YYYY-MM-DD hh:mm:ss")
     regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
     aggregate=False                                                     # Global emission can be plotted (True) or emission for each region (False)
 )

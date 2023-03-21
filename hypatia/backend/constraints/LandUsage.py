@@ -17,7 +17,7 @@ import pandas as pd
 Defines the upper and lower limit on the annual new installed capacity
 of each technology within each region
 """
-class NewCapacityRegional(Constraint):
+class LandUsage(Constraint):
     MODES = [ModelMode.Planning]
 
     def _check(self):

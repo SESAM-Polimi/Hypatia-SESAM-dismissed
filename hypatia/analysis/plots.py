@@ -206,6 +206,9 @@ class Plotter:
             fuels=results.get_model_data().settings.global_settings["Carriers_glob"].set_index(
                 ["Carrier"], inplace=False
             ),
+            years=results.get_model_data().settings.global_settings["Years"].set_index(
+                ["Year"], inplace=False
+            ),
         )
 
         self.mapping = results.get_model_data().settings.regional_settings
@@ -423,7 +426,7 @@ class Plotter:
         if kind == "bar":
             layout["barmode"] = "relative"
         _plotter(fig=fig, layout=layout, path=path)
-        fig.show()
+        # fig.show()
 
     def plot_new_capacity(
         self,
@@ -519,7 +522,7 @@ class Plotter:
         if kind == "bar":
             layout["barmode"] = "relative"
         _plotter(fig=fig, layout=layout, path=path)
-        fig.show()
+        # fig.show()
 
     def plot_total_capacity(
         self,
@@ -580,14 +583,11 @@ class Plotter:
                     continue
                 
                 residual = self.data.residual_capacity[region][tt]
-                
-                if self.mode == "Planning":
-                    
+                if self.mode.name == "Planning":
                     totcap = self.data.totalcapacity[region][tt]
                     totcap = pd.DataFrame(totcap.value, residual.index, residual.columns)
                     
                     to_plot = totcap - residual
-                    
                     for t, values in residual.items():
                         if t not in techs:
                             continue
@@ -679,7 +679,7 @@ class Plotter:
                                 )
                             )
 
-                            legends.add(t)
+                            legends.add(name)
                 else:
                     totcap = residual
                     totcap = pd.DataFrame(totcap.values, residual.index, residual.columns)
@@ -695,7 +695,6 @@ class Plotter:
 
                         name = f"{name}"
                         x.append(name)
-                        # xx.append(name)
                         fig.add_trace(
                             plot(
                                 kind=kind,
@@ -715,7 +714,7 @@ class Plotter:
                 (self.configs["regions"].loc[region, "region_name"], len(fig.data))
             )
         
-        if self.mode == "Planning":
+        if self.mode.name == "Planning":
             layout = {
                 "title": "Total Capacity",
                 "yaxis": {"title": unit},
@@ -732,7 +731,7 @@ class Plotter:
         if kind == "bar":
             layout["barmode"] = "relative"
         _plotter(fig=fig, layout=layout, path=path)
-        fig.show()
+        # fig.show()
 
     def plot_prod_by_tech(
         self,
@@ -759,6 +758,8 @@ class Plotter:
         path : str
             Defines the path to save the file with the extension of the file
         """
+        
+        multiplier = 8760/len(self.time_steps)
 
         if regions == "all":
             regions = self.regions
@@ -804,7 +805,7 @@ class Plotter:
                             kind=kind,
                             name=name,
                             x=values.index,
-                            y=techprod[t],
+                            y=techprod[t]*multiplier,
                             marker_color=color,
                             visible=visible(step_index, aggregate),
                             showlegend=False if t in legends else True,
@@ -826,7 +827,7 @@ class Plotter:
         if kind == "bar":
             layout["barmode"] = "relative"
         _plotter(fig=fig, layout=layout, path=path)
-        fig.show()
+        # fig.show()
 
     def plot_fuel_prod_cons(
         self,
@@ -856,12 +857,14 @@ class Plotter:
             if True, imports and exports will be considered in production & consumption
         """
         
+        multiplier = 8760/len(self.time_steps)
+        
         indexer_time = pd.MultiIndex.from_product(
             [self.years, self.time_steps],
             names=["Years", "Timesteps"],
         )
         
-        aggregate = False
+        # aggregate = False
         fuels = self.configs["fuels"]
         fuels = fuels[fuels["fuel_group"].isin(str2ls(fuel_group))].index
 
@@ -946,26 +949,32 @@ class Plotter:
                 colors.extend(
                     [self.configs["techs"].loc[tt, "tech_color"] for tt in _df.index]
                 )
+                
+            if trade and not aggregate:
+                for regions in self.configs["regions"].index:
+                    if(regions == region):
+                        continue
+                    
+                    columns = self.glob_mapping["fuels"]["Carr_name"].index
+                    imports = self.data.line_import[region][regions]
+                    imports = pd.DataFrame(imports.value, index = indexer_time, columns = columns)
 
-                if (trade) and ("imports" in self.data):
-                    for key, value in self.data.imports[region].items():
-                        imports = (
-                            value.groupby(level=0, sort=False)
-                            .sum()
-                            .loc[years, fuels]
-                            .sum()
-                            .sum()
-                        )
-                        production.loc[key] = imports
+                    imports = pd.DataFrame(imports[fuels].values, 
+                                            index = indexer_time, 
+                                            columns = ["Import to " + region + " from " + regions]*len(fuels))
+                    
+                    imports = imports.loc[years].sum(axis=1).sum()
+                    production.loc[regions] = imports
 
-                        labels.append(
-                            "import from "
-                            + self.configs["regions"].loc[key, "region_name"]
-                        )
-                        colors.append(self.configs["regions"].loc[key, "region_color"])
+                    labels.append(
+                        "Import from "
+                        + self.configs["regions"].loc[regions, "region_name"]
+                    )
+                    colors.append(self.configs["regions"].loc[regions, "region_color"])
+      
             fig.add_trace(
                 go.Pie(
-                    values=production.values,
+                    values=production.values*multiplier,
                     labels=labels,
                     visible=visible(step_index, aggregate),
                     marker=dict(colors=colors),
@@ -998,21 +1007,28 @@ class Plotter:
                     labels.append(self.configs["techs"].loc[tt, "tech_name"])
                     colors.append(self.configs["techs"].loc[tt, "tech_color"])
                     consumption.loc[tt] = values.loc[years].sum()
-            if (trade) and ("exports" in self.data):
-                for key, value in self.data["exports"][region].items():
-                    exports = (
-                        value.groupby(level=0, sort=False)
-                        .sum()
-                        .loc[years, fuels]
-                        .sum()
-                        .sum()
-                    )
-                    consumption.loc[key] = exports
+                    
+            if trade and not aggregate:
+                for regions in self.configs["regions"].index:
+                    if(regions == region):
+                        continue
+                    
+                    columns = self.glob_mapping["fuels"]["Carr_name"].index
+                    exports = self.data.line_export[region][regions]
+                    exports = pd.DataFrame(exports.value, index = indexer_time, columns = columns)
+
+                    exports = pd.DataFrame(exports[fuels].values,
+                                           index = indexer_time, 
+                                           columns = ["Export from " + region + " to " + regions]*len(fuels))
+                    
+                    exports = exports.loc[years].sum(axis=1).sum()
+                    consumption.loc[regions] = exports
 
                     labels.append(
-                        "export to " + self.configs["regions"].loc[key, "region_name"]
+                        "Export to " + self.configs["regions"].loc[regions, "region_name"]
                     )
-                    colors.append(self.configs["regions"].loc[key, "region_color"])
+                    colors.append(self.configs["regions"].loc[regions, "region_color"])
+            
             for category, df in self.data.technology_use[region].items():
                 if category in ["Transmission", "Storage"]:
                     continue
@@ -1050,7 +1066,7 @@ class Plotter:
           
             fig.add_trace(
                 go.Pie(
-                    values=consumption.values,
+                    values=consumption.values*multiplier,
                     labels=labels,
                     visible=visible(step_index, aggregate),
                     marker=dict(colors=colors),
@@ -1063,12 +1079,13 @@ class Plotter:
             counter.append(
                 (self.configs["regions"].loc[region, "region_name"], len(fig.data))
             )
+
         if not aggregate:
             fig = set_steps(fig, counter, mode)
         fig.update_annotations(yshift=20, xshift=-200)
         layout = {}
         _plotter(fig=fig, layout=layout, path=path)
-        fig.show()
+        # fig.show()
 
     def plot_emissions(
         self,
@@ -1162,7 +1179,7 @@ class Plotter:
             if kind == "bar":
                 layout["barmode"] = "relative"
             _plotter(fig=fig, layout=layout, path=path)
-            fig.show()
+            # fig.show()
 
     def plot_hourly_prod_by_tech(
         self,
@@ -1309,20 +1326,20 @@ class Plotter:
                     )
 
             for to_plot in to_plots:
-
-
+                
+                _year_ = self.glob_mapping["years"].loc[year]["Year_name"].to_list()
                 # To avoid leap years,
                 time_index = pd.date_range(
-                    start=start, periods=len(to_plot), freq="1h"
+                    start= str(_year_[0])+"-01-01 00:00:00", periods=len(to_plot), freq="1h"
                 )
 
                 to_plot.index = time_index
-                
+
                 try:
-                    to_plot = to_plot.loc[f" {start}":f" {end}"]
+                    to_plot = to_plot.loc[start:end]
                 except:
                     raise ValueError("incorrect start or end.")
-
+                    
                 # try:
                 #     yy = int(year) - 2021
                 #     to_plot.index = to_plot.index + pd.offsets.DateOffset(years=yy)
@@ -1352,47 +1369,49 @@ class Plotter:
 
                     legends.add(t)
                     
-            for to_plot_trade in to_plots_trade:
-
-                # To avoid leap years,
-                time_index = pd.date_range(
-                    start=start, periods=len(to_plot_trade), freq="1h"
-                )
-
-                to_plot_trade.index = time_index
-                
-                try:
-                    to_plot_trade = to_plot_trade.loc[f" {start}":f" {end}"]
-                except:
-                    raise ValueError("incorrect start or end.")
-
-                # try:
-                #     yy = int(year) - 2021
-                #     to_plot_trade.index = to_plot_trade.index + pd.offsets.DateOffset(years=yy)
-                # except:
-                #     pass
-
-                to_plot_trade = to_plot_trade.resample(freq)
-                to_plot_trade = eval(f"to_plot_trade.{function}()")
-
-                for tt, values in to_plot_trade.items():
-
-                    name = self.configs["importexport"].loc[tt, "line_name"]
-                    color = self.configs["importexport"].loc[tt, "line_color"]
-
-                    fig.add_trace(
-                        plot(
-                            kind=kind,
-                            name=name,
-                            x=values.index,
-                            y=values.values,
-                            marker_color=color,
-                            visible=visible(step_index, aggregate),
-                            showlegend=False if tt in legends else True,
-                        )
+            if not aggregate:
+                for to_plot_trade in to_plots_trade:
+    
+                    _year_ = self.glob_mapping["years"].loc[year]["Year_name"].to_list()
+                    # To avoid leap years,
+                    time_index = pd.date_range(
+                        start= str(_year_[0])+"-01-01 00:00:00", periods=len(to_plot_trade), freq="1h"
                     )
-
-                    legends.add(tt)
+    
+                    to_plot_trade.index = time_index
+                    
+                    try:
+                        to_plot_trade = to_plot_trade.loc[start:end]
+                    except:
+                        raise ValueError("incorrect start or end.")
+    
+                    # try:
+                    #     yy = int(year) - 2021
+                    #     to_plot_trade.index = to_plot_trade.index + pd.offsets.DateOffset(years=yy)
+                    # except:
+                    #     pass
+    
+                    to_plot_trade = to_plot_trade.resample(freq)
+                    to_plot_trade = eval(f"to_plot_trade.{function}()")
+    
+                    for tt, values in to_plot_trade.items():
+    
+                        name = self.configs["importexport"].loc[tt, "line_name"]
+                        color = self.configs["importexport"].loc[tt, "line_color"]
+    
+                        fig.add_trace(
+                            plot(
+                                kind=kind,
+                                name=name,
+                                x=values.index,
+                                y=values.values,
+                                marker_color=color,
+                                visible=visible(step_index, aggregate),
+                                showlegend=False if tt in legends else True,
+                            )
+                        )
+    
+                        legends.add(tt)
                     
                 
             counter.append(
@@ -1409,7 +1428,7 @@ class Plotter:
         if kind == "bar":
             layout["barmode"] = "relative"
         _plotter(fig=fig, layout=layout, path=path)
-        fig.show()
+        # fig.show()
 
     def plot_regional_costs(
         self,
@@ -1553,4 +1572,4 @@ class Plotter:
         if not aggregate:
             fig = set_steps(fig, counter, mode)
         _plotter(fig=fig, layout=layout, path=path)
-        fig.show()
+        # fig.show()

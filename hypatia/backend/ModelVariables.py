@@ -275,12 +275,17 @@ class ModelVariables():
                     self.model_data.settings.time_steps,
                 )
                 
+                # cost_variable_regional[key] = cp.multiply(
+                #         production_annual_regional[key],
+                #         self.model_data.regional_parameters[reg]["tech_var_cost"].loc[:, key],
+                #     )
+                
                 multiplier = 8760/len(self.model_data.settings.time_steps)
                 cost_variable_regional[key] = cp.multiply(
                     production_annual_regional[key]*multiplier,
                     self.model_data.regional_parameters[reg]["tech_var_cost"].loc[:, key],
                 )
-                
+
                 # if len(self.model_data.settings.time_steps) == 24:
                 #     cost_variable_regional[key] = cp.multiply(
                 #         production_annual_regional[key]*365,
@@ -623,6 +628,19 @@ class ModelVariables():
                                 .sort_index()
                                 .values
                             )
+                            
+                            line_length = (
+                                pd.concat(
+                                    [
+                                        self.model_data.trade_parameters["line_length"][
+                                            ("{}-{}".format(reg, key), carr)
+                                        ]
+                                    ]
+                                    * len(self.model_data.settings.time_steps)
+                                )
+                                .sort_index()
+                                .values
+                            )
 
                         elif "{}-{}".format(key, reg) in self.model_data.settings.lines_list:
 
@@ -638,6 +656,22 @@ class ModelVariables():
                                 .sort_index()
                                 .values
                             )
+                            
+                            line_length = (
+                                pd.concat(
+                                    [
+                                        self.model_data.trade_parameters["line_length"][
+                                            ("{}-{}".format(key, reg), carr)
+                                        ]
+                                    ]
+                                    * len(self.model_data.settings.time_steps)
+                                )
+                                .sort_index()
+                                .values
+                            )
+                            
+                        length_ratio = cp.multiply(line_length, 0.01)
+                        line_efficiency = (cp.exp(cp.multiply(np.log(line_eff), length_ratio)))
 
                         totalimportbycarrier_regional[carr] += cp.multiply(
                             self.line_import[reg][key][
@@ -646,15 +680,15 @@ class ModelVariables():
                                     self.model_data.settings.global_settings["Carriers_glob"]["Carrier"]
                                 ).index(carr),
                             ],
-                            line_eff,
+                            line_efficiency,
                         )
 
                         totalexportbycarrier_regional[carr] += self.line_export[reg][key][
-                            :,
-                            list(
-                                self.model_data.settings.global_settings["Carriers_glob"]["Carrier"]
-                            ).index(carr),
-                        ]
+                                :,
+                                list(
+                                    self.model_data.settings.global_settings["Carriers_glob"]["Carrier"]
+                                ).index(carr),
+                            ]
 
             self.totalusebycarrier[reg] = totalusebycarrier_regional
             self.totalprodbycarrier[reg] = totalprodbycarrier_regional

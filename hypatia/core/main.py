@@ -233,14 +233,18 @@ class Model:
         
         imports=[]
         exports=[]
+        imports_name=[]
+        exports_name=[]
         for step_index, region in enumerate(self.__settings.regions):            
             for step_indexx, regions in enumerate(self.__settings.regions):
                 if(regions == region):
                     continue
                 imports.append("Import to " + region + " from " + regions)
                 exports.append("Export from " + region + " to " + regions)
+                imports_name.append("Import from " + regions)
+                exports_name.append("Export to " + regions)
             
-        import_export = {"line_name": imports + exports,
+        import_export = {"line_name": imports_name + exports_name,
             "line_color": '' }
         
         importexport_sheet = pd.DataFrame(import_export,

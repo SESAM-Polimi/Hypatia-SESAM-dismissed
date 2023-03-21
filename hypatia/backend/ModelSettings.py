@@ -301,6 +301,12 @@ class ModelSettings:
                 "index": pd.Index(self.years, name="Years"),
                 "columns": indexer,
             },
+            "line_length": {
+                "sheet_name": "Line_length",
+                "value": 100,
+                "index": pd.Index(self.years, name="Years"),
+                "columns": indexer,
+            },
         }
 
         if self.mode == ModelMode.Planning:

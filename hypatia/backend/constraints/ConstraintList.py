@@ -20,6 +20,7 @@ from hypatia.backend.constraints.ProductionRamping import ProductionRamping
 from hypatia.backend.constraints.RenewableProductionRegional import RenewableProductionRegional
 from hypatia.backend.constraints.RenewableProductionGlobal import RenewableProductionGlobal  
 from hypatia.backend.constraints.ElectrolysisConsumption import ElectrolysisConsumption
+from hypatia.backend.constraints.LandUsage import LandUsage
 
 CONSTRAINTS = [
     Balance,
@@ -43,6 +44,7 @@ CONSTRAINTS = [
     LineNewCapacity,
     ProductionRamping,
     RenewableProductionRegional,
+    # LandUsage
     # ElectrolysisConsumption
 ]
 
