@@ -284,6 +284,8 @@ class Plotter:
 
         """
         
+        multiplier = 8760/len(self.time_steps)
+        
         indexer_time = pd.MultiIndex.from_product(
             [self.years, self.time_steps],
             names=["Years", "Timesteps"],
@@ -334,7 +336,7 @@ class Plotter:
                         plot(
                             kind=kind,
                             x=values.index,
-                            y=values.values,
+                            y=values.values*multiplier,
                             name=name,
                             marker_color=color,
                             visible=visible(step_index, aggregate),
@@ -370,7 +372,7 @@ class Plotter:
                             plot(
                                 kind=kind,
                                 x=values.index,
-                                y=values.values,
+                                y=values.values*multiplier,
                                 name=name,
                                 marker_color=color,
                                 visible=visible(step_index, aggregate),
@@ -403,7 +405,7 @@ class Plotter:
                                     plot(
                                         kind=kind,
                                         x=to_plot.index,
-                                        y=to_plot.values,
+                                        y=to_plot.values*multiplier,
                                         name=name,
                                         marker_color=color,
                                         visible=visible(step_index, aggregate),
@@ -1116,6 +1118,8 @@ class Plotter:
             If True will aggregated the regions into one singel region. The default is False.
         """
         
+        multiplier = 8760/len(self.time_steps)
+        
         indexer_time = pd.MultiIndex.from_product(
             [self.years, self.time_steps],
             names=["Years", "Timesteps"],
@@ -1155,7 +1159,7 @@ class Plotter:
                                 kind=kind,
                                 name=name,
                                 x=values.index,
-                                y=to_plot[t],
+                                y=to_plot[t]*multiplier,
                                 marker_color=color,
                                 visible=visible(step_index, aggregate),
                                 showlegend=True,
@@ -1332,13 +1336,13 @@ class Plotter:
                 time_index = pd.date_range(
                     start= str(_year_[0])+"-01-01 00:00:00", periods=len(to_plot), freq="1h"
                 )
-
                 to_plot.index = time_index
 
                 try:
                     to_plot = to_plot.loc[start:end]
                 except:
                     raise ValueError("incorrect start or end.")
+                # print(to_plot)
                     
                 # try:
                 #     yy = int(year) - 2021
@@ -1348,6 +1352,7 @@ class Plotter:
 
                 to_plot = to_plot.resample(freq)
                 to_plot = eval(f"to_plot.{function}()")
+                
 
                 for t, values in to_plot.items():
                     if t not in techs:
@@ -1468,7 +1473,16 @@ class Plotter:
             "decommissioning_cost": {"name": "Decommissioning Cost", "color": "yellow"},
             "cost_fix_tax": {"name": "Fix Tax Cost", "color": "brown"},
             "cost_fix_sub": {"name": "Fix subsidies", "color": "khaki"},
+            "cost_inv_tax": {"name":"Investment Tax Cost", "color":"orange"},
+            "cost_inv_sub": {"name": "Investment subsidies", "color":"grey"},
+            "emission_cost_by_region": {"name": "Emission tax", "color":"black"},            
         }
+        
+        # cost_items_line = {
+        #     "cost_inv_line":{"name":"Investment Cost Lines", "color":"purple"},
+        #     "cost_variable_line":{"name":"Variable Cost Lines","color":"pink"},
+        # }
+            
 
         techs = self.configs["techs"]
         exclude_techs = techs[
@@ -1477,6 +1491,9 @@ class Plotter:
 
         if regions == "all":
             regions = self.regions
+            
+        emission_name = self.configs["emissions"]
+        emission_name = list(emission_name.index)
 
         fig = go.Figure()
         counter = []
@@ -1491,7 +1508,7 @@ class Plotter:
             
             for cost_item, info in cost_items.items():
                 if (cost_item not in data.keys()) or (cost_item in exclude_cost_items):
-                    continue
+                    continue                    
                 
                 tech_type_ = self.mapping[region]["Technologies"]["Tech_category"].to_list()
 
@@ -1501,14 +1518,24 @@ class Plotter:
                         tech_type.append(elem)
                         
                 to_plot = pd.DataFrame()
-                for tt in tech_type:
-                    if tt == "Demand":
-                        continue
-                    columns = self.mapping[region]["Technologies"].loc[self.mapping[region]["Technologies"]["Tech_category"]==tt]["Technology"].to_list()
-                    df = pd.DataFrame(data[cost_item][region][tt].value,index = self.years, columns = columns)
-                    to_plot = pd.concat([to_plot,df], axis=1)
+                
+                if cost_item in ["emission_cost_by_region"]:
+                    for type_emissions in emission_name:
+                        for tt in tech_type:
+                            if tt == "Demand" or tt =="Transmission" or tt == "Storage":
+                                continue
+                            columns = self.mapping[region]["Technologies"].loc[self.mapping[region]["Technologies"]["Tech_category"]==tt]["Technology"].to_list()
+                            df = pd.DataFrame(data[cost_item][region][type_emissions][tt].value,index = self.years, columns = columns)
+                            to_plot = pd.concat([to_plot,df], axis=1)
+                else:            
+                    for tt in tech_type:
+                        if tt == "Demand":
+                            continue
+                        columns = self.mapping[region]["Technologies"].loc[self.mapping[region]["Technologies"]["Tech_category"]==tt]["Technology"].to_list()
+                        df = pd.DataFrame(data[cost_item][region][tt].value,index = self.years, columns = columns)
+                        to_plot = pd.concat([to_plot,df], axis=1)
                     
-                if cost_item in ["cost_fix_sub"]:
+                if cost_item in ["cost_fix_sub", "cost_inv_sub"]:
                     to_plot = -to_plot
 
                 if stacked_by == "techs":

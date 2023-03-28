@@ -38,6 +38,7 @@ RESULTS = [
     "cost_fix_tax",
     "cost_fix_sub",
     "emission_cost_by_type",
+    "emission_cost_by_region",
     "emission_by_type",
     "captured_emission_by_type",
     "used_emissions_by_type",
