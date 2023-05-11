@@ -17,6 +17,7 @@ from hypatia.utility.excel import (
     read_parameters,
 )
 from hypatia.utility.constants import ModelMode
+from hypatia.utility.constants import OptimizationMode
 from hypatia.backend.Build import BuildModel
 from copy import deepcopy
 from hypatia.postprocessing.PostProcessingList import POSTPROCESSING_MODULES
@@ -41,7 +42,7 @@ class Model:
     A Hypatia Model
     """
 
-    def __init__(self, path, mode, name="unknown"):
+    def __init__(self, path, mode, optimization, name="unknown"):
         
         print("\n ------------------- NEW RUN ------------------- \n")
 
@@ -66,10 +67,12 @@ class Model:
         """
 
         assert mode in ["Planning", "Operation"], "Invalid Operation"
+        assert optimization in ["Multi", "Single"], "Invalid Optimization Mode"
         model_mode = ModelMode.Planning if mode == "Planning" else ModelMode.Operation
+        optimization_mode = OptimizationMode.Multi if optimization == "Multi" else  OptimizationMode.Single
         self.results = None
         self.backup_results = None
-        self.__settings = read_settings(path=path, mode=model_mode)
+        self.__settings = read_settings(path=path, mode=model_mode, optimization=optimization_mode)
         self.__model_data = None
         self.name = name
 
@@ -113,7 +116,7 @@ class Model:
 
         self.__model_data = read_parameters(self.__settings, path)
 
-    def run(self, solver, verbosity=True, force_rewrite=False, **kwargs):
+    def run(self, solver, weight, verbosity=True, force_rewrite=False, **kwargs):
 
         """
         Run the model by passing the solver, verbosity and force_rewrite.
@@ -171,8 +174,80 @@ class Model:
             )
 
         model = BuildModel(model_data=self.__model_data)
+        self.constr_backup = model.constr
+        self.NPC = model.global_objective
+        # if self.__model_data.settings.optimization == "Multi":
+        self.total_emission = model.global_emission_objective
 
-        results = model._solve(verbosity=verbosity, solver=solver.upper(), **kwargs)
+        results = model._solve(weight, verbosity=verbosity, solver=solver.upper(), **kwargs)
+        self.check = results
+        if results is not None:
+            self.results = results
+            
+    def run_MO(self, solver, number_solutions, verbosity=True, force_rewrite=False, **kwargs):
+
+        """
+        Run the model by passing the solver, verbosity and force_rewrite.
+
+        .. note::
+
+            The passed solver must be in the installed solvers package of the DSL
+            (CVXPY).
+
+        Parameters
+        ---------
+        solver : str
+            Solver indicates for kind of solver to be used.
+
+        verbosity : Boolean
+            Verbosity overrides the default of hiding solver output
+
+        force_rewrite : boolean
+            If the force_rewrite is True, any existing results will
+            be overwritten and the previous results will be saved
+            in a back-up file.
+
+        kwargs : Optional
+            solver specific options. for more information refer to `cvxpy documentation <https://www.cvxpy.org/api_reference/cvxpy.problems.html?highlight=solve#cvxpy.problems.problem.Problem.solve>`_
+
+        """
+
+        # checks if the input parameters are imported to the model
+        if self.__model_data == None:
+
+            raise DataNotImported(
+                "No data is imported to the model. Use " "'read_input_data' function."
+            )
+
+        # checks if the model is already solved when force_rewrite is false
+        # and takes a backup of previous results if force_rewrite is true
+        if self.results != None:
+
+            if not force_rewrite:
+                raise ResultOverWrite(
+                    "Model is already solved."
+                    "To overwrite the results change "
+                    "'force_rewrite'= True"
+                )
+
+            self.backup_results = deepcopy(self.results)
+
+            self.results = None
+
+        # checks if the given solver is in the installed solver package
+        if solver.upper() not in installed_solvers():
+
+            raise SolverNotFound(
+                f"Installed solvers on your system are {installed_solvers()}"
+            )
+
+        model = BuildModel(model_data=self.__model_data)
+        self.constr_backup = model.constr
+        self.NPC = model.global_objective
+        # if self.__model_data.settings.optimization == "Multi":
+        self.total_emission = model.global_emission_objective
+
+        results = model._solve_MO(number_solutions, verbosity=verbosity, solver=solver.upper(), **kwargs)
         self.check = results
         if results is not None:
             self.results = results
@@ -209,8 +284,7 @@ class Model:
                 self.results
             ).write_processed_results(path)
         else:
-            raise Exception("Post processing module do not exist")
-
+            raise Exception("Post processing module do not exist")       
 
     def create_config_file(self, path):
         """Creates a config excel file for plots

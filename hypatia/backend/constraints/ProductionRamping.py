@@ -80,12 +80,12 @@ class ProductionRamping(Constraint):
 
                 energy_prod_differences = self.__get_energy_prod_differences()
 
-                # rules.append(
-                #     energy_prod_differences[reg][tech_type] <= max_ramp_in_timestep
-                # )
-                # rules.append(
-                #     energy_prod_differences[reg][tech_type] * -1 <= min_ramp_in_timestep
-                # )
+                rules.append(
+                    energy_prod_differences[reg][tech_type] <= max_ramp_in_timestep
+                )
+                rules.append(
+                    energy_prod_differences[reg][tech_type] * -1 <= min_ramp_in_timestep
+                )
         return rules
 
     def _required_regional_parameters(settings):

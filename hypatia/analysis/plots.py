@@ -252,6 +252,45 @@ class Plotter:
                 f"items {item} have multiple units {units}."
             )
         return units[0]
+    
+    def pareto_frontier(
+        self, 
+        path, 
+        NPC, 
+        emissions
+    ):
+        """Pareto frontier plot
+        
+        Parameters
+        ----------
+        path : str
+            where to save the file + the name of the file and extension        
+        """
+        
+        # Create a line plot with markers
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=emissions,
+            y=NPC,
+            mode='lines+markers',
+            marker=dict(
+                size=10,
+                color='red',
+                symbol='circle'
+            )
+        ))
+        
+        # Customize the layout
+        fig.update_layout(
+            title='Pareto Frontier',
+            xaxis_title='emissions [kg]',
+            yaxis_title='NPC [$]'
+        )
+        
+        fig.write_html(path)
+     
+        
+        
 
     def plot_use_by_technology(
         self,

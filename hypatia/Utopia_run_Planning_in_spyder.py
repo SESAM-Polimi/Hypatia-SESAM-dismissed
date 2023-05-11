@@ -11,10 +11,12 @@ from hypatia import Plotter
 
 #%% 
 # Create the model using as input the sets files
+OptimizationMode = "Multi"
 
 Utopia = Model(
     path="examples/Planning_teaching/sets",                             # Path to the sets folder
     mode="Planning",                                                    # "Planning" or "Operation" mode
+    optimization = OptimizationMode
 )
 
 #%% 
@@ -142,17 +144,17 @@ plots.plot_fuel_prod_cons(
 plots.plot_emissions(
     path = 'examples/Planning_teaching/plots/emissions.html',           # Path to the folder in which the plot will be saved
     tech_group = 'Power Generation',                                    # The group of the techs, reported in the configuration file, to be plotted
-    emission_type = ["CO2"],                                            # The type of the emissions, reported in the configuration file, to be plotted
+    emission_type = ["CO2 emissions"],                                            # The type of the emissions, reported in the configuration file, to be plotted
     kind="bar",                                                         # "Bar" or "Area" are the two kind of plots accepted
     regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
-    aggregate=False                                                     # Global emission can be plotted (True) or emission for each region (False)
+    aggregate=True                                                     # Global emission can be plotted (True) or emission for each region (False)
 )
 
 #%%
 # Plot the hourly production of the carrier in the fuel_group for each tech in the tech_group, from the start to the end time
 
 plots.plot_hourly_prod_by_tech(
-    path = 'examples/Planning_teaching/plots/hourlyprod_2020.html',     # Path to the folder in which the plot will be saved
+    path = 'examples/Planning_teaching/plots/hourlyprod_2020_January.html',     # Path to the folder in which the plot will be saved
     tech_group = 'Power Generation',                                    # The group of the techs, reported in the configuration file, to be plotted
     fuel_group = 'Electricity',                                         # The group of the carriers, reported in the configuration file, to be plotted
     kind = "bar",                                                       # "Bar" or "Area" are the two kind of plots accepted
@@ -164,13 +166,37 @@ plots.plot_hourly_prod_by_tech(
 )
 
 plots.plot_hourly_prod_by_tech(
-    path = 'examples/Planning_teaching/plots/hourlyprod_2030.html',     # Path to the folder in which the plot will be saved
+    path = 'examples/Planning_teaching/plots/hourlyprod_2020_July.html',     # Path to the folder in which the plot will be saved
+    tech_group = 'Power Generation',                                    # The group of the techs, reported in the configuration file, to be plotted
+    fuel_group = 'Electricity',                                         # The group of the carriers, reported in the configuration file, to be plotted
+    kind = "bar",                                                       # "Bar" or "Area" are the two kind of plots accepted
+    year = ["Y0"],                                                      # Year considered 
+    start="2020-07-01 00:00:00",                                        # Starting day and time
+    end="2020-07-01 23:00:00",                                          # Ending day and time
+    regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
+    aggregate=False                                                     # Global hourly production can be plotted (True) or emission for each region (False)
+)
+
+plots.plot_hourly_prod_by_tech(
+    path = 'examples/Planning_teaching/plots/hourlyprod_2030_January.html',     # Path to the folder in which the plot will be saved
     tech_group = 'Power Generation',                                    # The group of the techs, reported in the configuration file, to be plotted
     fuel_group = 'Electricity',                                         # The group of the carriers, reported in the configuration file, to be plotted
     kind = "bar",                                                       # "Bar" or "Area" are the two kind of plots accepted
     year = ["Y10"],                                                     # Year considered 
     start="2030-01-01 00:00:00",                                        # Starting day and time
     end="2030-01-01 23:00:00",                                          # Ending day and time
+    regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
+    aggregate=False                                                     # Global hourly production can be plotted (True) or emission for each region (False)
+)
+
+plots.plot_hourly_prod_by_tech(
+    path = 'examples/Planning_teaching/plots/hourlyprod_2030_July.html',     # Path to the folder in which the plot will be saved
+    tech_group = 'Power Generation',                                    # The group of the techs, reported in the configuration file, to be plotted
+    fuel_group = 'Electricity',                                         # The group of the carriers, reported in the configuration file, to be plotted
+    kind = "bar",                                                       # "Bar" or "Area" are the two kind of plots accepted
+    year = ["Y10"],                                                     # Year considered 
+    start="2030-07-01 00:00:00",                                        # Starting day and time
+    end="2030-07-01 23:00:00",                                          # Ending day and time
     regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
     aggregate=False                                                     # Global hourly production can be plotted (True) or emission for each region (False)
 )

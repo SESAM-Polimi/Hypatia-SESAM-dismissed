@@ -104,7 +104,6 @@ class AggregatedPostProcessing(PostProcessingInterface):
                     elif len(carriers) > 1:
                         carrier_ratio_in = self._regional_parameters[region]["carrier_ratio_in"]
                         tech_to_carriers[region][tech] = carrier_ratio_in[tech]
-
         return tech_to_carriers
 
     def tech_carrier_out_production(self):
@@ -132,6 +131,7 @@ class AggregatedPostProcessing(PostProcessingInterface):
                     index=year_slice,
                     columns=columns,
                 )
+                
                 for tech in techs:
                     res = self.tech_to_carrier_out()[region][tech].mul(frame[tech].values, axis='index')
                     res = pd.concat({tech: res}, names=['Technology'])

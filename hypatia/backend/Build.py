@@ -10,7 +10,7 @@ import numpy as np
 from collections import namedtuple
 from hypatia.backend.ModelData import ModelData
 from hypatia.backend.ModelVariables import ModelVariables
-from hypatia.utility.constants import ModelMode
+from hypatia.utility.constants import ModelMode, OptimizationMode
 from hypatia.utility.utility import (
     _calc_variable_overall,
     _calc_production_overall,
@@ -90,13 +90,18 @@ class BuildModel:
         self.constr = []
         for constraint in CONSTRAINTS:
             self.constr += constraint(self.model_data, self.vars).get()
-
+            
+        
         timeslice_fraction = self.model_data.settings.timeslice_fraction
         if not isinstance(timeslice_fraction, int):
             timeslice_fraction.shape = (len(self.model_data.settings.time_steps), 1)
         self.timeslice_fraction = timeslice_fraction
 
         # calling the methods based on the defined mode by the user
+        if self.model_data.settings.optimization == OptimizationMode.Multi:
+            self._set_regional_emission_objective()
+            self._set_final_emission_objective()
+            
         if self.model_data.settings.mode == ModelMode.Planning:
             self._set_regional_objective_planning()
 
@@ -114,15 +119,76 @@ class BuildModel:
             else:
                 self._set_lines_objective_operation()
                 self._set_final_objective_multinode()
+                
+        self.NPC = self.global_objective
+        if self.model_data.settings.optimization == OptimizationMode.Multi:
+            self.total_emission = self.global_emission_objective
+                    
 
-    def _solve(self, verbosity, solver, **kwargs):
+    def _solve(self, weight, verbosity, solver, **kwargs):
 
         """
         Creates a CVXPY problem instance, if the output status is optimal,
         returns the results to the interface
         """
+        
+        if self.model_data.settings.optimization == OptimizationMode.Single:
+            objective = cp.Minimize(self.global_objective)
+        elif self.model_data.settings.optimization == OptimizationMode.Multi:
+            objective = cp.Minimize(weight * self.global_objective + (1- weight) * self.global_emission_objective)
+            
 
-        objective = cp.Minimize(self.global_objective)
+        # objective = cp.Minimize(self.global_objective)
+        problem = cp.Problem(objective, self.constr)
+        problem.solve(solver=solver, verbose=verbosity, **kwargs)
+
+        if problem.status == "optimal":
+
+            res = RESULTS.copy()
+            to_add = []
+            if self.model_data.settings.multi_node:
+                if self.model_data.settings.mode == ModelMode.Planning:
+                    to_add = [
+                        "line_totalcapacity",
+                        "line_new_capacity",
+                        "real_new_line_capacity",
+                        "line_decommissioned_capacity",
+                        "cost_inv_line",
+                        "cost_fix_line",
+                        "cost_decom_line",
+                        "cost_variable_line",
+                    ]
+                else:
+                    to_add = [
+                        "line_totalcapacity",
+                        "cost_fix_line",
+                        "cost_variable_line",
+                    ]
+            if self.model_data.settings.mode == ModelMode.Planning:
+                to_add.extend(PLANNING_RESULTS)
+
+            res.extend(to_add)
+            result_collector = namedtuple("result", res)
+            results = result_collector(
+                **{result: getattr(self.vars, result) for result in res}
+            )
+
+            return results
+
+        else:
+            print(
+                "No solution found and no result will be uploaded to the model",
+                "critical",
+            )
+            
+    def _solve_emission(self, number_solutions, verbosity, solver, **kwargs):
+
+        """
+        Creates a CVXPY problem instance, if the output status is optimal,
+        returns the results to the interface
+        """
+        
+        objective = cp.Minimize(self.global_emission_objective)     
         problem = cp.Problem(objective, self.constr)
         problem.solve(solver=solver, verbose=verbosity, **kwargs)
 
@@ -211,6 +277,32 @@ class BuildModel:
                 totalcost_regional, np.power(discount_factor, years)
             )
             self.totalcost_allregions += totalcost_regional_discounted
+            
+    def _set_regional_emission_objective(self):
+        """
+        Calculates the regional emission objective function in the planning mode
+        """
+        self.totalemission_allregions = np.zeros((len(self.model_data.settings.years), 1))
+        
+        for reg in self.model_data.settings.regions:
+            
+            totalemission_regional = np.zeros((len(self.model_data.settings.years), 1))
+            
+            for emission_type in get_emission_types(self.model_data.settings.global_settings):
+                
+                totalemission_regional_by_type = np.zeros((len(self.model_data.settings.years), 1))
+                
+                for ctgry in self.model_data.settings.technologies[reg].keys():
+
+                    if ctgry != "Demand" and ctgry != "Transmission" and ctgry != "Storage":
+                        
+                        totalemission_regional_by_type += cp.sum(
+                            self.vars.emission_by_region[reg][emission_type][ctgry], axis=1
+                        )
+                        
+                totalemission_regional_by_type += totalemission_regional_by_type
+                
+            self.totalemission_allregions += totalemission_regional_by_type
 
     def _set_regional_objective_operation(self):
 
@@ -328,3 +420,15 @@ class BuildModel:
         elif self.model_data.settings.mode == ModelMode.Operation:
 
             self.global_objective = self.totalcost_allregions + self.totalcost_lines
+            
+    def _set_final_emission_objective(self):
+
+        """
+        Calculates the overall emission objective function 
+        """
+        if self.model_data.settings.mode == ModelMode.Planning:
+            self.global_emission_objective = cp.sum(self.totalemission_allregions)
+
+        elif self.model_data.settings.mode == ModelMode.Operation:
+
+            self.global_emission_objective = self.totalemission_allregions

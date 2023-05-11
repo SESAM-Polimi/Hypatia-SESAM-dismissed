@@ -11,10 +11,12 @@ from hypatia import Plotter
 
 #%% 
 # Create the model using as input the sets files
+OptimizationMode = "Multi"
 
 Utopia = Model(
     path="examples/Operation_teaching/sets",                           # Path to the sets folder
     mode="Operation",                                                  # "Planning" or "Operation" mode
+    optimization = OptimizationMode
 )
 
 #%% 
@@ -32,12 +34,18 @@ Utopia.read_input_data("examples\Operation_teaching\parameters")       # Path to
 
 #%% 
 # Run the model to find the optimal solution
-
+# if OptimizationMode == "Single":
 Utopia.run(
-    solver='gurobi',                                                    # Selection of the solver: 'GUROBI', 'CVXOPT', 'ECOS', 'ECOS_BB', 'GLPK', 'GLPK_MI', 'OSQP', 'SCIPY', 'SCS’
+    solver='gurobi',                                                  # Selection of the solver: 'GUROBI', 'CVXOPT', 'ECOS', 'ECOS_BB', 'GLPK', 'GLPK_MI', 'OSQP', 'SCIPY', 'SCS’
     verbosity=True,
     force_rewrite= True                                                 # Overwrite the parameters files (True) or not (False)
 )
+# else:
+#     Utopia.run_multi_obj(
+#         solver='gurobi',
+#         verbosity=True,
+#         force_rewrite=True
+#     )
 
 #%% 
 # Create the folder where to save the results
@@ -102,7 +110,7 @@ plots.plot_prod_by_tech(
 
 plots.plot_use_by_technology(
     path = 'examples/Operation_teaching/plots/use_by_tech.html',        # Path to the folder in which the plot will be saved
-    fuel_group = 'Oil',                                                 # The group of the carriers, reported in the configuration file, to be plotted
+    fuel_group = 'Natural Gas',                                                 # The group of the carriers, reported in the configuration file, to be plotted
     kind="bar",                                                         # "Bar" or "Area" are the two kind of plots accepted
     regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
     aggregate=False                                                     # True to aggregate the results of each region, False to plot them separately
@@ -126,10 +134,10 @@ plots.plot_fuel_prod_cons(
 plots.plot_emissions(
     path = 'examples/Operation_teaching/plots/emissions.html',          # Path to the folder in which the plot will be saved
     tech_group = 'Power Generation',                                    # The group of the techs, reported in the configuration file, to be plotted
-    emission_type = ["CO2"],                                            # The type of the emissions, reported in the configuration file, to be plotted
+    emission_type = ["CO2 emissions"],                                            # The type of the emissions, reported in the configuration file, to be plotted
     kind="bar",                                                         # "Bar" or "Area" are the two kind of plots accepted
     regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
-    aggregate=True                                                      # Global emission can be plotted (True) or emission for each region (False)
+    aggregate=False                                                      # Global emission can be plotted (True) or emission for each region (False)
 )
 
 #%%

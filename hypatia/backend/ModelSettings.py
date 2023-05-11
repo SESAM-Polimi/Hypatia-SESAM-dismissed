@@ -12,6 +12,7 @@ from hypatia.utility.constants import (
     global_set_ids,
     regional_set_ids,
     ModelMode,
+    OptimizationMode,
     technology_categories,
     carrier_types,
 )
@@ -54,10 +55,12 @@ class ModelSettings:
     def __init__(
         self,
         mode: ModelMode,
+        optimization: OptimizationMode,
         global_settings: Dict[str, pd.DataFrame],
         regional_settings: Dict[str, Dict[str, pd.DataFrame]],
     ):
         self.mode = mode
+        self.optimization = optimization
         self.global_settings = global_settings
         self.regional_settings = regional_settings
         self._validate_global_settings()
@@ -449,8 +452,8 @@ class ModelSettings:
                     "index": pd.Index(self.years, name="Years"),
                     "columns": indexer_reg,
                 },
-                "emission_filter_efficiency": {
-                    "sheet_name": "Emission_filter_efficiency",
+                "emission_capture_efficiency": {
+                    "sheet_name": "Emission_capture_efficiency",
                     "value": 0,
                     "index": pd.Index(self.years, name="Years"),
                     "columns": specific_emission_indexer,

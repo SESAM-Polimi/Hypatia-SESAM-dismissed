@@ -680,6 +680,7 @@ class ModelVariables():
                                     self.model_data.settings.global_settings["Carriers_glob"]["Carrier"]
                                 ).index(carr),
                             ]
+                        
 
             self.totalusebycarrier[reg] = totalusebycarrier_regional
             self.totalprodbycarrier[reg] = totalprodbycarrier_regional
@@ -720,14 +721,14 @@ class ModelVariables():
                                 self.production_annual[reg][key][:,indx],
                                 cp.multiply(self.model_data.regional_parameters[reg]["specific_emission"][emission_type].loc[:, key].iloc[:,indx].values,
                                 (np.ones((len(self.model_data.settings.years),))
-                                 -self.model_data.regional_parameters[reg]["emission_filter_efficiency"][emission_type].loc[:, key].iloc[:,indx].values))), 
+                                 -self.model_data.regional_parameters[reg]["emission_capture_efficiency"][emission_type].loc[:, key].iloc[:,indx].values))), 
                                 (len(self.model_data.settings.years),1)
                             ))
                             
                             total_captured_emissions.append(cp.reshape(cp.multiply(
                                 self.production_annual[reg][key][:,indx],
                                 cp.multiply(self.model_data.regional_parameters[reg]["specific_emission"][emission_type].loc[:, key].iloc[:,indx].values,
-                                self.model_data.regional_parameters[reg]["emission_filter_efficiency"][emission_type].loc[:, key].iloc[:,indx].values)), 
+                                self.model_data.regional_parameters[reg]["emission_capture_efficiency"][emission_type].loc[:, key].iloc[:,indx].values)), 
                                 (len(self.model_data.settings.years),1)
                             ))
                             
