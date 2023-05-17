@@ -13,6 +13,7 @@ from hypatia.utility.constants import (
     regional_set_ids,
     ModelMode,
     OptimizationMode,
+    EnsureFeasibility,
     technology_categories,
     carrier_types,
 )
@@ -56,11 +57,13 @@ class ModelSettings:
         self,
         mode: ModelMode,
         optimization: OptimizationMode,
+        ensure_feasibility: EnsureFeasibility,
         global_settings: Dict[str, pd.DataFrame],
         regional_settings: Dict[str, Dict[str, pd.DataFrame]],
     ):
         self.mode = mode
         self.optimization = optimization
+        self.ensure_feasibility = ensure_feasibility
         self.global_settings = global_settings
         self.regional_settings = regional_settings
         self._validate_global_settings()

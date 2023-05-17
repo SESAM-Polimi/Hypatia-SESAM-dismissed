@@ -2,6 +2,7 @@ from hypatia.backend.ModelSettings import ModelSettings
 from hypatia.backend.ModelData import ModelData
 from hypatia.utility.constants import ModelMode
 from hypatia.utility.constants import OptimizationMode
+from hypatia.utility.constants import EnsureFeasibility
 from openpyxl import load_workbook
 import pandas as pd
 import cvxpy as cp
@@ -14,7 +15,7 @@ from hypatia.error_log.Exceptions import (
     SolverNotFound,
 )
 
-def read_settings(path: str, mode: ModelMode, optimization: OptimizationMode) -> ModelSettings:
+def read_settings(path: str, mode: ModelMode, optimization: OptimizationMode, ensure_feasibility: EnsureFeasibility) -> ModelSettings:
     wb_glob = load_workbook(r"{}/global.xlsx".format(path))
     sets_glob = wb_glob["Sets"]
 
@@ -42,7 +43,7 @@ def read_settings(path: str, mode: ModelMode, optimization: OptimizationMode) ->
 
         regional_settings[reg] = settings
 
-    return ModelSettings(mode, optimization, global_settings, regional_settings)
+    return ModelSettings(mode, optimization, ensure_feasibility, global_settings, regional_settings)
 
 
 def write_parameters_files(settings: ModelSettings, path: str, force_rewrite: bool = False):

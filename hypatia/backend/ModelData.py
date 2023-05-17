@@ -9,6 +9,8 @@ from hypatia.utility.constants import (
     global_set_ids,
     regional_set_ids,
     ModelMode,
+    OptimizationMode,
+    EnsureFeasibility,
     technology_categories,
     carrier_types,
 )

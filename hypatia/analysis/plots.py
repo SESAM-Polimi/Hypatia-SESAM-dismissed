@@ -252,45 +252,6 @@ class Plotter:
                 f"items {item} have multiple units {units}."
             )
         return units[0]
-    
-    def pareto_frontier(
-        self, 
-        path, 
-        NPC, 
-        emissions
-    ):
-        """Pareto frontier plot
-        
-        Parameters
-        ----------
-        path : str
-            where to save the file + the name of the file and extension        
-        """
-        
-        # Create a line plot with markers
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=emissions,
-            y=NPC,
-            mode='lines+markers',
-            marker=dict(
-                size=10,
-                color='red',
-                symbol='circle'
-            )
-        ))
-        
-        # Customize the layout
-        fig.update_layout(
-            title='Pareto Frontier',
-            xaxis_title='emissions [kg]',
-            yaxis_title='NPC [$]'
-        )
-        
-        fig.write_html(path)
-     
-        
-        
 
     def plot_use_by_technology(
         self,
@@ -322,7 +283,6 @@ class Plotter:
             the mode of plot when more than one region exists in
 
         """
-        
         multiplier = 8760/len(self.time_steps)
         
         indexer_time = pd.MultiIndex.from_product(
@@ -466,7 +426,7 @@ class Plotter:
 
         if kind == "bar":
             layout["barmode"] = "relative"
-        _plotter(fig=fig, layout=layout, path=path)
+        _plotter(fig=fig, layout=layout, path = path)
         # fig.show()
 
     def plot_new_capacity(
@@ -1192,7 +1152,7 @@ class Plotter:
                             continue
                         name = self.configs["techs"].loc[t, "tech_name"]
                         color = self.configs["techs"].loc[t, "tech_color"]
-    
+                        print(to_plot[t])
                         fig.add_trace(
                             plot(
                                 kind=kind,

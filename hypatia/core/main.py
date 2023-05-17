@@ -18,6 +18,7 @@ from hypatia.utility.excel import (
 )
 from hypatia.utility.constants import ModelMode
 from hypatia.utility.constants import OptimizationMode
+from hypatia.utility.constants import EnsureFeasibility 
 from hypatia.backend.Build import BuildModel
 from copy import deepcopy
 from hypatia.postprocessing.PostProcessingList import POSTPROCESSING_MODULES
@@ -42,7 +43,7 @@ class Model:
     A Hypatia Model
     """
 
-    def __init__(self, path, mode, optimization, name="unknown"):
+    def __init__(self, path, mode, optimization, ensure_feasibility, name="unknown"):
         
         print("\n ------------------- NEW RUN ------------------- \n")
 
@@ -68,11 +69,13 @@ class Model:
 
         assert mode in ["Planning", "Operation"], "Invalid Operation"
         assert optimization in ["Multi", "Single"], "Invalid Optimization Mode"
+        assert ensure_feasibility in ["Yes", "No"], "Invalid Input"
         model_mode = ModelMode.Planning if mode == "Planning" else ModelMode.Operation
         optimization_mode = OptimizationMode.Multi if optimization == "Multi" else  OptimizationMode.Single
+        ensurefeasibility = EnsureFeasibility.Yes if ensure_feasibility == "Yes" else EnsureFeasibility.No
         self.results = None
         self.backup_results = None
-        self.__settings = read_settings(path=path, mode=model_mode, optimization=optimization_mode)
+        self.__settings = read_settings(path=path, mode=model_mode, optimization=optimization_mode, ensure_feasibility=ensurefeasibility)
         self.__model_data = None
         self.name = name
 
@@ -116,7 +119,7 @@ class Model:
 
         self.__model_data = read_parameters(self.__settings, path)
 
-    def run(self, solver, weight, verbosity=True, force_rewrite=False, **kwargs):
+    def run(self, solver, verbosity=True, force_rewrite=False, **kwargs):
 
         """
         Run the model by passing the solver, verbosity and force_rewrite.
@@ -175,16 +178,13 @@ class Model:
 
         model = BuildModel(model_data=self.__model_data)
         self.constr_backup = model.constr
-        self.NPC = model.global_objective
-        # if self.__model_data.settings.optimization == "Multi":
-        self.total_emission = model.global_emission_objective
 
-        results = model._solve(weight, verbosity=verbosity, solver=solver.upper(), **kwargs)
+        results = model._solve(verbosity=verbosity, solver=solver.upper(), **kwargs)
         self.check = results
         if results is not None:
             self.results = results
             
-    def run_MO(self, solver, number_solutions, verbosity=True, force_rewrite=False, **kwargs):
+    def run_MO(self, solver, number_solutions, path, verbosity=True, force_rewrite=False, **kwargs):
 
         """
         Run the model by passing the solver, verbosity and force_rewrite.
@@ -242,16 +242,14 @@ class Model:
             )
 
         model = BuildModel(model_data=self.__model_data)
-        self.constr_backup = model.constr
-        self.NPC = model.global_objective
-        # if self.__model_data.settings.optimization == "Multi":
-        self.total_emission = model.global_emission_objective
+            
+        self.constr_backup = model.constr        
 
-        results = model._solve_MO(number_solutions, verbosity=verbosity, solver=solver.upper(), **kwargs)
+        results = model._solve_MO(number_solutions, path, verbosity=verbosity, solver=solver.upper(), **kwargs)
         self.check = results
         if results is not None:
             self.results = results
-
+        
     def to_csv(self, path, postprocessing_module="default", force_rewrite=False):
         """Exports the results of the model to csv files with nested folders
 
@@ -268,6 +266,11 @@ class Model:
         if self.results == None:
             raise WrongInputMode("model has not any results")
 
+        
+        self.__model_data.settings
+    
+        # for i in range(len(self.results_list)):
+        #     print(i)
         if os.path.exists(path):
             if not force_rewrite:
                 raise ResultOverWrite(
@@ -276,7 +279,6 @@ class Model:
                 )
         else:
             os.mkdir(path)
-        self.__model_data.settings
 
         if postprocessing_module in POSTPROCESSING_MODULES.keys():
             POSTPROCESSING_MODULES[postprocessing_module](
@@ -284,7 +286,7 @@ class Model:
                 self.results
             ).write_processed_results(path)
         else:
-            raise Exception("Post processing module do not exist")       
+            raise Exception("Post processing module do not exist") 
 
     def create_config_file(self, path):
         """Creates a config excel file for plots

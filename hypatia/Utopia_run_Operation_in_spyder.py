@@ -11,7 +11,7 @@ from hypatia import Plotter
 
 #%% 
 # Create the model using as input the sets files
-OptimizationMode = "Multi"
+OptimizationMode = "Single"
 
 Utopia = Model(
     path="examples/Operation_teaching/sets",                           # Path to the sets folder

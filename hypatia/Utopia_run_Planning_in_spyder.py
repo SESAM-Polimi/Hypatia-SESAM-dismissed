@@ -11,7 +11,7 @@ from hypatia import Plotter
 
 #%% 
 # Create the model using as input the sets files
-OptimizationMode = "Multi"
+OptimizationMode = "Single"
 
 Utopia = Model(
     path="examples/Planning_teaching/sets",                             # Path to the sets folder
@@ -50,7 +50,7 @@ Utopia.run(
 # Save the results as csv file in the previous folder
 
 Utopia.to_csv(
-    path='examples/Planning_teaching/results',                          # Path to the destination folder for the results
+    path='examples/Planning_teaching/results_min',                          # Path to the destination folder for the results
     force_rewrite=True,                                                 # Overwrite the parameters files (True) or not (False)
     postprocessing_module="aggregated"                                  # "default" and "aggregated" are the two options
 )
@@ -110,7 +110,7 @@ plots.plot_prod_by_tech(
 # Plot the annual consumption of each carrier in the fuel_group in each year and save it in the plots folder 
 
 plots.plot_use_by_technology(
-    path = 'examples/Planning_teaching/plots/use_by_tech.html',         # Path to the folder in which the plot will be saved
+    path = 'examples/Planning_teaching/plots/use_by_tech_min.html',         # Path to the folder in which the plot will be saved
     fuel_group = 'Oil',                                                 # The group of the carriers, reported in the configuration file, to be plotted
     kind="bar",                                                         # "Bar" or "Area" are the two kind of plots accepted
     regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
