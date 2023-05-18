@@ -30,10 +30,14 @@ logger = logging.getLogger(__name__)
 
 RESULTS = [
     "technology_prod",
+    "production_annual",
     "technology_use",
+    "consumption_annual",
     "line_import",
+    "line_import_annual",
     "line_export",
-    "unmet_demand",
+    "line_export_annual",
+    "unmet_demand_annual",
     "cost_fix",
     "cost_variable",
     "totalcapacity",

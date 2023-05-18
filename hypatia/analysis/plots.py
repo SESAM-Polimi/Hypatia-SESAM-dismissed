@@ -283,7 +283,6 @@ class Plotter:
             the mode of plot when more than one region exists in
 
         """
-        multiplier = 8760/len(self.time_steps)
         
         indexer_time = pd.MultiIndex.from_product(
             [self.years, self.time_steps],
@@ -335,7 +334,7 @@ class Plotter:
                         plot(
                             kind=kind,
                             x=values.index,
-                            y=values.values*multiplier,
+                            y=values.values,
                             name=name,
                             marker_color=color,
                             visible=visible(step_index, aggregate),
@@ -371,7 +370,7 @@ class Plotter:
                             plot(
                                 kind=kind,
                                 x=values.index,
-                                y=values.values*multiplier,
+                                y=values.values,
                                 name=name,
                                 marker_color=color,
                                 visible=visible(step_index, aggregate),
@@ -404,7 +403,7 @@ class Plotter:
                                     plot(
                                         kind=kind,
                                         x=to_plot.index,
-                                        y=to_plot.values*multiplier,
+                                        y=to_plot.values,
                                         name=name,
                                         marker_color=color,
                                         visible=visible(step_index, aggregate),
@@ -759,8 +758,6 @@ class Plotter:
         path : str
             Defines the path to save the file with the extension of the file
         """
-        
-        multiplier = 8760/len(self.time_steps)
 
         if regions == "all":
             regions = self.regions
@@ -806,7 +803,7 @@ class Plotter:
                             kind=kind,
                             name=name,
                             x=values.index,
-                            y=techprod[t]*multiplier,
+                            y=techprod[t],
                             marker_color=color,
                             visible=visible(step_index, aggregate),
                             showlegend=False if t in legends else True,
@@ -857,8 +854,6 @@ class Plotter:
         trade : boolean
             if True, imports and exports will be considered in production & consumption
         """
-        
-        multiplier = 8760/len(self.time_steps)
         
         indexer_time = pd.MultiIndex.from_product(
             [self.years, self.time_steps],
@@ -975,7 +970,7 @@ class Plotter:
       
             fig.add_trace(
                 go.Pie(
-                    values=production.values*multiplier,
+                    values=production.values,
                     labels=labels,
                     visible=visible(step_index, aggregate),
                     marker=dict(colors=colors),
@@ -1067,7 +1062,7 @@ class Plotter:
           
             fig.add_trace(
                 go.Pie(
-                    values=consumption.values*multiplier,
+                    values=consumption.values,
                     labels=labels,
                     visible=visible(step_index, aggregate),
                     marker=dict(colors=colors),
@@ -1117,8 +1112,6 @@ class Plotter:
             If True will aggregated the regions into one singel region. The default is False.
         """
         
-        multiplier = 8760/len(self.time_steps)
-        
         indexer_time = pd.MultiIndex.from_product(
             [self.years, self.time_steps],
             names=["Years", "Timesteps"],
@@ -1152,13 +1145,12 @@ class Plotter:
                             continue
                         name = self.configs["techs"].loc[t, "tech_name"]
                         color = self.configs["techs"].loc[t, "tech_color"]
-                        print(to_plot[t])
                         fig.add_trace(
                             plot(
                                 kind=kind,
                                 name=name,
                                 x=values.index,
-                                y=to_plot[t]*multiplier,
+                                y=to_plot[t],
                                 marker_color=color,
                                 visible=visible(step_index, aggregate),
                                 showlegend=True,
@@ -1228,6 +1220,8 @@ class Plotter:
             If True will aggregated the regions into one singel region. The default is False.
 
         """
+        
+        multiplier = len(self.time_steps)/8760
         
         indexer_time = pd.MultiIndex.from_product(
             [self.years, self.time_steps],
@@ -1364,7 +1358,7 @@ class Plotter:
                             kind=kind,
                             name=name,
                             x=values.index,
-                            y=values.values,
+                            y=values.values*multiplier,
                             marker_color=color,
                             visible=visible(step_index, aggregate),
                             showlegend=False if t in legends else True,
@@ -1408,7 +1402,7 @@ class Plotter:
                                 kind=kind,
                                 name=name,
                                 x=values.index,
-                                y=values.values,
+                                y=values.values*multiplier,
                                 marker_color=color,
                                 visible=visible(step_index, aggregate),
                                 showlegend=False if tt in legends else True,

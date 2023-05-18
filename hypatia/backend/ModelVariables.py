@@ -239,9 +239,10 @@ class ModelVariables():
         self.cost_decom = {}
         self.cost_variable = {}
         self.production_annual = {}
+        self.consumption_annual = {}
         self.land_usage = {}
         self.residual_capacity = {}
-        self.unmet_demand = {}
+        self.unmet_demand_annual = {}
         self.cost_unmet_demand = {}
 
         for reg in self.model_data.settings.regions:
@@ -261,6 +262,7 @@ class ModelVariables():
             cost_decom_regional = {}
             cost_variable_regional = {}
             production_annual_regional = {}
+            consumption_annual_regional = {}
             land_usage_regional = {}
             residual_capacity_regional = {}
             unmet_demand_annual_regional = {}
@@ -338,14 +340,16 @@ class ModelVariables():
                     self.model_data.settings.time_steps,
                 )
                 
-                # cost_variable_regional[key] = cp.multiply(
-                #         production_annual_regional[key],
-                #         self.model_data.regional_parameters[reg]["tech_var_cost"].loc[:, key],
-                #     )
+                if key != "Demand" and key != "Supply": 
                 
-                multiplier = 8760/len(self.model_data.settings.time_steps)
+                    consumption_annual_regional[key] = annual_activity(
+                        self.technology_use[reg][key],
+                        self.model_data.settings.years,
+                        self.model_data.settings.time_steps,
+                    )            
+
                 cost_variable_regional[key] = cp.multiply(
-                    production_annual_regional[key]*multiplier,
+                    production_annual_regional[key],
                     self.model_data.regional_parameters[reg]["tech_var_cost"].loc[:, key],
                 )
 
@@ -389,9 +393,10 @@ class ModelVariables():
             self.cost_variable[reg] = cost_variable_regional
             self.cost_inv_fvalue[reg] = cost_fvalue_regional
             self.production_annual[reg] = production_annual_regional
+            self.consumption_annual[reg] = consumption_annual_regional
             self.land_usage[reg] = land_usage_regional
             self.residual_capacity[reg] = residual_capacity_regional 
-            self.unmet_demand[reg] = unmet_demand_annual_regional 
+            self.unmet_demand_annual[reg] = unmet_demand_annual_regional 
             self.cost_unmet_demand[reg] = cost_unmet_demand_regional
             
 
@@ -451,16 +456,30 @@ class ModelVariables():
                 self.model_data.trade_parameters["line_decom_cost"].loc[:, key].values,
                 self.line_decommissioned_capacity[key],
             )
+            
         
-        multiplier = 8760/len(self.model_data.settings.time_steps)
         self.cost_variable_line = line_varcost(
-            self.model_data.trade_parameters["line_var_cost"]*multiplier,
+            self.model_data.trade_parameters["line_var_cost"],
             self.line_import,
             self.model_data.settings.regions,
             self.model_data.settings.years,
             self.model_data.settings.time_steps,
             self.model_data.settings.lines_list,
         )
+        
+        self.line_import_annual = line_annual_activity(
+            self.line_import,
+            self.model_data.settings.regions,
+            self.model_data.settings.years,
+            self.model_data.settings.time_steps,
+            )
+        
+        self.line_export_annual = line_annual_activity(
+            self.line_export,
+            self.model_data.settings.regions,
+            self.model_data.settings.years,
+            self.model_data.settings.time_steps,
+            )
 
     def _calc_variable_operation(self):
 
@@ -475,8 +494,9 @@ class ModelVariables():
         self.cost_fix_sub = {}
         self.cost_variable = {}
         self.production_annual = {}
+        self.consumption_annual = {}
         self.residual_capacity = {}
-        self.unmet_demand = {} 
+        self.unmet_demand_annual = {} 
         self.cost_unmet_demand = {}
         
         for reg in self.model_data.settings.regions:
@@ -487,6 +507,7 @@ class ModelVariables():
             cost_fix_Sub_regional = {}
             cost_variable_regional = {}
             production_annual_regional = {}
+            consumption_annual_regional = {}
             residual_capacity_regional = {}
             unmet_demand_annual_regional = {}
             cost_unmet_demand_regional = {}            
@@ -516,9 +537,16 @@ class ModelVariables():
                         self.model_data.settings.time_steps,
                     )
                     
-                    multiplier = 8760/len(self.model_data.settings.time_steps)
+                    if key != "Demand" and key != "Supply": 
+                    
+                        consumption_annual_regional[key] = annual_activity(
+                            self.technology_use[reg][key],
+                            self.model_data.settings.years,
+                            self.model_data.settings.time_steps,
+                        ) 
+                    
                     cost_variable_regional[key] = cp.multiply(
-                        production_annual_regional[key]*multiplier,
+                        production_annual_regional[key],
                         self.model_data.regional_parameters[reg]["tech_var_cost"].loc[:, key],
                     )
                     
@@ -540,8 +568,9 @@ class ModelVariables():
             self.cost_fix_sub[reg] = cost_fix_Sub_regional
             self.cost_variable[reg] = cost_variable_regional
             self.production_annual[reg] = production_annual_regional
+            self.consumption_annual[reg] = consumption_annual_regional
             self.residual_capacity[reg] = residual_capacity_regional
-            self.unmet_demand[reg] = unmet_demand_annual_regional 
+            self.unmet_demand_annual[reg] = unmet_demand_annual_regional 
             self.cost_unmet_demand[reg] = cost_unmet_demand_regional
         
 
@@ -563,10 +592,9 @@ class ModelVariables():
                 self.model_data.trade_parameters["line_fixed_cost"].loc[:, key].values,
                 self.line_totalcapacity[key],
             )
-            
-        multiplier = 8760/len(self.model_data.settings.time_steps)
+
         self.cost_variable_line = line_varcost(
-            self.model_data.trade_parameters["line_var_cost"]*multiplier,
+            self.model_data.trade_parameters["line_var_cost"],
             self.line_import,
             self.model_data.settings.regions,
             self.model_data.settings.years,
@@ -850,12 +878,11 @@ class ModelVariables():
                                 (len(self.model_data.settings.years),1)
                             ))
                     
-                    multiplier = 8760/len(self.model_data.settings.time_steps)
                     emissions_regional[emission_type][key] = cp.hstack(regional_emissions) 
                     total_captured_emissions_regional[emission_type][key] = cp.hstack(total_captured_emissions) 
                     used_emissions_regional[emission_type][key] = cp.hstack(used_emissions)
                     emission_cost_regional[emission_type][key] = cp.multiply(
-                        emissions_regional[emission_type][key]*multiplier,
+                        emissions_regional[emission_type][key],
                         self.model_data.regional_parameters[reg]["emission_tax"][emission_type].loc[:, key],
                     )
 

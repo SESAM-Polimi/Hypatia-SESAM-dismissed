@@ -1,5 +1,6 @@
 from hypatia.backend.constraints.Constraint import Constraint
 from hypatia.utility.utility import create_technology_columns
+from hypatia.utility.utility import available_resource_prod
 import pandas as pd
 import cvxpy as cp
 
@@ -50,6 +51,10 @@ class ProductionRamping(Constraint):
     
     def rules(self):
         rules = []
+        
+        timeslice_fraction = self.model_data.settings.timeslice_fraction
+        if not isinstance(timeslice_fraction, int):
+            timeslice_fraction.shape = (len(self.model_data.settings.time_steps), 1)
 
         for reg in self.model_data.settings.regions:
             for tech_type in self.model_data.settings.technologies[reg].keys():
@@ -65,6 +70,17 @@ class ProductionRamping(Constraint):
                 ).values
 
                 max_ramp_in_timestep = cp.multiply(self.variables.totalcapacity[reg][tech_type], max_percentage_ramps)
+                for indx, year in enumerate(self.model_data.settings.years):
+                    max_ramp_in_timestep = cp.multiply(
+                        max_ramp_in_timestep[indx : indx + 1, :],
+                        self.model_data.regional_parameters[reg]["res_capacity_factor"]
+                        .loc[(year, slice(None)), (tech_type, slice(None))]
+                        .values,
+                        timeslice_fraction,
+                        self.model_data.regional_parameters[reg]["annualprod_per_unitcapacity"]
+                        .loc[:, (tech_type, slice(None))]
+                        .values,
+                    )
                 max_ramp_in_timestep_rows = []
                 for years_index in range(0, max_ramp_in_timestep.shape[0]):
                     for _ in range(0, len(self.model_data.settings.time_steps)):

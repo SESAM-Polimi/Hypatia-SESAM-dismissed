@@ -45,7 +45,7 @@ CONSTRAINTS = [
     RenewableProductionGlobal,
     LineAvailability,
     LineNewCapacity,
-    ProductionRamping,
+    # ProductionRamping,
     RenewableProductionRegional,
     LandUsageRegional,
     LandUsageGlobal,
