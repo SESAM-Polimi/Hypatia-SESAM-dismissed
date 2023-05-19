@@ -62,7 +62,6 @@ class AggregatedPostProcessing(PostProcessingInterface):
                 "emissions": self.emission(),
                 "captured_emissions": self.emissions_captured(),
                 "total_capacity": self.total_capacity(),
-                # "new_capacity": self.new_capacity(),
                 "new_capacity": self.real_new_capacity(),
                 "line_import_hourly": self.line_import_hourly(),
                 "line_import_annual": self.line_import_annual(),

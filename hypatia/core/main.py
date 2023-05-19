@@ -44,8 +44,6 @@ class Model:
     """
 
     def __init__(self, path, mode, optimization, ensure_feasibility, name="unknown"):
-        
-        print("\n ------------------- NEW RUN ------------------- \n")
 
         """Initializes a Hypatia model by passing the optimization mode and
         the path of the structural input files

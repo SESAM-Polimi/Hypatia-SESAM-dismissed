@@ -11,46 +11,57 @@ from hypatia import Plotter
 
 #%% 
 # Create the model using as input the sets files
-OptimizationMode = "Single"
+OptimizationMode = "Multi"                                              # "Single" or "Multi" objective optimization
+Number_solutions = 3                                                    # Number of required solution in case of multi-objective optimizatio
+Ensure_Feasibility = "No"                                               # "Yes" allows unmet demand, "No" otherwise                                               
 
 Utopia = Model(
-    path="examples/Operation_teaching/sets",                           # Path to the sets folder
-    mode="Operation",                                                  # "Planning" or "Operation" mode
-    optimization = OptimizationMode
+    path="examples/Operation_teaching/sets",                             # Path to the sets folder
+    mode="Operation",                                                    # "Planning" or "Operation" mode
+    optimization = OptimizationMode,
+    ensure_feasibility = Ensure_Feasibility                                     
 )
 
 #%% 
 # Create the parameters with default values
 
 # Utopia.create_data_excels(
-#     path ='examples\Operation_teaching\parameters',                    # Path to the parameters folder
-#     force_rewrite=True                                                 # Overwrite the parameters files (True) or not (False)
+#     path ='examples\Operation_teaching\parameters',                      # Path to the parameters folder
+#     force_rewrite=True                                                  # Overwrite the parameters files (True) or not (False)
 # )
 
 #%% 
 # Read the parameters
 
-Utopia.read_input_data("examples\Operation_teaching\parameters")       # Path to the parameters folder
+Utopia.read_input_data("examples\Operation_teaching\parameters")         # Path to the parameters folder
 
 #%% 
 # Run the model to find the optimal solution
-# if OptimizationMode == "Single":
-Utopia.run(
-    solver='gurobi',                                                  # Selection of the solver: 'GUROBI', 'CVXOPT', 'ECOS', 'ECOS_BB', 'GLPK', 'GLPK_MI', 'OSQP', 'SCIPY', 'SCS’
-    verbosity=True,
-    force_rewrite= True                                                 # Overwrite the parameters files (True) or not (False)
-)
-# else:
-#     Utopia.run_multi_obj(
-#         solver='gurobi',
-#         verbosity=True,
-#         force_rewrite=True
-#     )
 
-#%% 
-# Create the folder where to save the results
+if OptimizationMode == "Multi":    
+    Utopia.run_MO(
+        solver='gurobi',                                                    # Selection of the solver: 'GUROBI', 'CVXOPT', 'ECOS', 'ECOS_BB', 'GLPK', 'GLPK_MI', 'OSQP', 'SCIPY', 'SCS’
+        number_solutions = Number_solutions,
+        path = "examples/Operation_teaching/",                               # Path to the destination folder for the Pareto Frontier plot
+        verbosity=True,
+        force_rewrite= True                                                 # Overwrite the parameters files (True) or not (False)
+    )
+else:
+    Utopia.run(
+        solver='gurobi',                                                    # Selection of the solver: 'GUROBI', 'CVXOPT', 'ECOS', 'ECOS_BB', 'GLPK', 'GLPK_MI', 'OSQP', 'SCIPY', 'SCS’
+        verbosity=True,
+        force_rewrite= True                                                 # Overwrite the parameters files (True) or not (False)
+    )
 
-# os.mkdir("examples/Operation_teaching/results/")                       # Path to the results folder
+
+#%%
+# Create results and plots folder    
+    
+if not os.path.exists("examples/Operation_teaching/results"):
+    os.mkdir("examples/Planning_teaching/results")
+    
+if not os.path.exists("examples/Operation_teaching/plots"):
+    os.mkdir("examples/Planning_teaching/plots")
 
 #%% 
 # Save the results as csv file in the previous folder

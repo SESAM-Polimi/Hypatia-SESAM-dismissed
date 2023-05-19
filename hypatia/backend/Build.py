@@ -197,11 +197,13 @@ class BuildModel:
         returns the results to the interface
         """ 
         
+        print("\n ------------------- NEW RUN ------------------- \n")
+        
         if self.model_data.settings.optimization == OptimizationMode.Single:
             return print(
                     "Wrong run function. Use run"
                     ) 
-            
+
         objective = cp.Minimize(self.global_objective)     
         problem = cp.Problem(objective, self.constr)
         problem.solve(solver=solver, verbose=verbosity, **kwargs)
@@ -245,6 +247,8 @@ class BuildModel:
             )
             
             Min_NPC = self.global_objective.value
+            if self.model_data.settings.mode == ModelMode.Operation:
+                Min_NPC = self.global_objective.value[0]
             Max_emissions = results.tot_emissions.value
 
         else:
@@ -252,6 +256,8 @@ class BuildModel:
                 "No solution found and no result will be uploaded to the model",
                 "critical",
             )
+            
+        print("\n ------------------- NEW RUN ------------------- \n")
             
         objective = cp.Minimize(self.global_emission_objective)     
         problem = cp.Problem(objective, self.constr)
@@ -297,9 +303,13 @@ class BuildModel:
             
             if self.model_data.settings.multi_node:
                 Max_NPC = results.tot_cost_multi_node.value
+                if self.model_data.settings.mode == ModelMode.Operation:
+                    Max_NPC = results.tot_cost_multi_node.value[0]
             else:
                 Max_NPC = results.tot_cost_single_node.value
-            Min_emissions = self.global_emission_objective.value  
+                if self.model_data.settings.mode == ModelMode.Operation:
+                    Max_NPC = results.tot_cost_single_node.value[0]
+            Min_emissions = self.global_emission_objective.value
             
         else:
             print(
@@ -314,9 +324,10 @@ class BuildModel:
         while i < (number_solutions-1):
             emission_list.append(Max_emissions-i*step)
             i += 1
-        
+        emission_list = [Max_emissions] + emission_list + [Min_emissions]
         NPC_list = []
         for emis in emission_list:
+            print("\n ------------------- NEW RUN ------------------- \n")
             new_constr = [self.vars.tot_emissions <= emis]
             objective = cp.Minimize(self.global_objective)     
             problem = cp.Problem(objective, self.constr + new_constr)
@@ -359,8 +370,10 @@ class BuildModel:
                 results = result_collector(
                     **{result: getattr(self.vars, result) for result in res}
                 )
-                
-                NPC_list.append(self.global_objective.value)
+                if self.model_data.settings.mode == ModelMode.Operation:
+                    NPC_list.append(self.global_objective.value[0])
+                else:
+                    NPC_list.append(self.global_objective.value)
                 
                 new_constr = []
                 
@@ -391,7 +404,7 @@ class BuildModel:
             yaxis_title='NPC [$]'
         )
         
-        fig.write_html(path)
+        fig.write_html(path + "ParetoFrontier.html")
         
         emission_ = emission_list[0:number_solutions-1]
         NPC_ = NPC_list[0:number_solutions-1]
@@ -414,18 +427,23 @@ class BuildModel:
             yaxis_title='NPC [$]'
         )
         
-        fig.write_html(path)
+        fig.write_html(path + "ParetoFrontier_NoMaxCost.html")
         
-        print("Emissions = " +str(emission_list))
+        print("\nEmissions = " +str(emission_list))
         print("NPCs = " +str(NPC_list))
         
-        solution = int(input("Please select one of the solution entering a number between 1 and Number_solutions (1: Min NPC, Number_solutions: Min Emissions): "))
-        
+        solution = int(input("\nPlease select one of the solution entering a number between 1 and Number_solutions (1: Min NPC, Number_solutions: Min Emissions): "))
+        print("\n ------------------- FINAL RUN ------------------- \n")
         selected_emission_value = emission_list[solution-1]
         print("Selected emission value = " + str(selected_emission_value))
-        self.constr += [self.vars.tot_emissions <= emission_list[solution-1]]
-        objective = cp.Minimize(self.global_objective)     
-        problem = cp.Problem(objective, self.constr)
+        emission_constr = [self.vars.tot_emissions <= selected_emission_value]
+        # emission_constr = [self.vars.tot_emissions == 844520166.0400091]
+        if self.model_data.settings.mode == ModelMode.Operation and solution == number_solutions:
+            objective = cp.Minimize(self.global_emission_objective)     
+            problem = cp.Problem(objective, self.constr)
+        else:
+            objective = cp.Minimize(self.global_objective)     
+            problem = cp.Problem(objective, self.constr + emission_constr)
         problem.solve(solver=solver, verbose=verbosity, **kwargs)
 
         if problem.status == "optimal":
@@ -549,6 +567,7 @@ class BuildModel:
                 totalemission_regional += totalemission_regional_by_type
                 
             self.totalemission_allregions += totalemission_regional
+            
 
     def _set_regional_objective_operation(self):
 
@@ -626,7 +645,7 @@ class BuildModel:
         operation mode
         """
 
-        self.totalcost_lines = np.zeros((len(self.model_data.settings.years), 1))
+        self.totalcost_lines = 0
 
         for line in self.model_data.settings.lines_list:
 
@@ -681,4 +700,4 @@ class BuildModel:
 
         elif self.model_data.settings.mode == ModelMode.Operation:
 
-            self.global_emission_objective = self.totalemission_allregions
+            self.global_emission_objective = cp.sum(self.totalemission_allregions)

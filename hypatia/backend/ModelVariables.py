@@ -601,6 +601,20 @@ class ModelVariables():
             self.model_data.settings.time_steps,
             self.model_data.settings.lines_list,
         )
+        
+        self.line_import_annual = line_annual_activity(
+            self.line_import,
+            self.model_data.settings.regions,
+            self.model_data.settings.years,
+            self.model_data.settings.time_steps,
+            )
+        
+        self.line_export_annual = line_annual_activity(
+            self.line_export,
+            self.model_data.settings.regions,
+            self.model_data.settings.years,
+            self.model_data.settings.time_steps,
+            )
 
     def _calc_variable_storage_SOC(self):
 
@@ -1014,7 +1028,7 @@ class ModelVariables():
         
     def _calc_lines_cost_operation(self):
     
-        self.totalcost_lines = np.zeros((len(self.model_data.settings.years), 1))
+        self.totalcost_lines = 0
 
         for line in self.model_data.settings.lines_list:
 
@@ -1081,6 +1095,6 @@ class ModelVariables():
 
         elif self.model_data.settings.mode == ModelMode.Operation:
 
-            self.tot_emissions = self.totalemission_allregions
+            self.tot_emissions = cp.sum(self.totalemission_allregions)
         
             
