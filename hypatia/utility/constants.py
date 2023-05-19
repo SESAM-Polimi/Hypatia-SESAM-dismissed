@@ -39,10 +39,6 @@ carrier_types = ["Resource", "Intermediate", "Demand"]
 class ModelMode(Enum):
     Planning = "Planning"
     Operation = "Operation"
-    
-class OptimizationMode(Enum):
-    Multi = "Multi"
-    Single = "Single"
 
 class TopologyType(Enum):
     SingleNode = "SingleNode"

@@ -11,14 +11,12 @@ from hypatia import Plotter
 
 #%% 
 # Create the model using as input the sets files
-OptimizationMode = "Multi"                                              # "Single" or "Multi" objective optimization
-Number_solutions = 3                                                    # Number of required solution in case of multi-objective optimizatio
-Ensure_Feasibility = "No"                                               # "Yes" allows unmet demand, "No" otherwise                                               
+
+Ensure_Feasibility = "Yes"                                               # "Yes" allows unmet demand, "No" otherwise                                               
 
 Utopia = Model(
     path="examples/Operation_teaching/sets",                             # Path to the sets folder
     mode="Operation",                                                    # "Planning" or "Operation" mode
-    optimization = OptimizationMode,
     ensure_feasibility = Ensure_Feasibility                                     
 )
 
@@ -38,21 +36,11 @@ Utopia.read_input_data("examples\Operation_teaching\parameters")         # Path 
 #%% 
 # Run the model to find the optimal solution
 
-if OptimizationMode == "Multi":    
-    Utopia.run_MO(
-        solver='gurobi',                                                    # Selection of the solver: 'GUROBI', 'CVXOPT', 'ECOS', 'ECOS_BB', 'GLPK', 'GLPK_MI', 'OSQP', 'SCIPY', 'SCS’
-        number_solutions = Number_solutions,
-        path = "examples/Operation_teaching/",                               # Path to the destination folder for the Pareto Frontier plot
-        verbosity=True,
-        force_rewrite= True                                                 # Overwrite the parameters files (True) or not (False)
-    )
-else:
-    Utopia.run(
-        solver='gurobi',                                                    # Selection of the solver: 'GUROBI', 'CVXOPT', 'ECOS', 'ECOS_BB', 'GLPK', 'GLPK_MI', 'OSQP', 'SCIPY', 'SCS’
-        verbosity=True,
-        force_rewrite= True                                                 # Overwrite the parameters files (True) or not (False)
-    )
-
+Utopia.run(
+    solver='gurobi',                                                    # Selection of the solver: 'GUROBI', 'CVXOPT', 'ECOS', 'ECOS_BB', 'GLPK', 'GLPK_MI', 'OSQP', 'SCIPY', 'SCS’
+    verbosity=True,
+    force_rewrite= True                                                 # Overwrite the parameters files (True) or not (False)
+)
 
 #%%
 # Create results and plots folder    
@@ -76,7 +64,7 @@ Utopia.to_csv(
 # Create the configuration file for the plots
 
 # Utopia.create_config_file(
-#     path = 'examples/Operation_teaching/config.xlsx'                   # Path to the config file
+#     path = 'examples/Operation_teaching/config12.xlsx'                   # Path to the config file
 # )
 
 #%% 
@@ -121,7 +109,7 @@ plots.plot_prod_by_tech(
 
 plots.plot_use_by_technology(
     path = 'examples/Operation_teaching/plots/use_by_tech.html',        # Path to the folder in which the plot will be saved
-    fuel_group = 'Natural Gas',                                                 # The group of the carriers, reported in the configuration file, to be plotted
+    fuel_group = 'Oil',                                                 # The group of the carriers, reported in the configuration file, to be plotted
     kind="bar",                                                         # "Bar" or "Area" are the two kind of plots accepted
     regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
     aggregate=False                                                     # True to aggregate the results of each region, False to plot them separately

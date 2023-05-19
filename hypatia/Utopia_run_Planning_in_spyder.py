@@ -11,14 +11,12 @@ from hypatia import Plotter
 
 #%% 
 # Create the model using as input the sets files
-OptimizationMode = "Multi"                                              # "Single" or "Multi" objective optimization
-Number_solutions = 3                                                    # Number of required solution in case of multi-objective optimizatio
-Ensure_Feasibility = "No"                                               # "Yes" allows unmet demand, "No" otherwise                                               
+
+Ensure_Feasibility = "Yes"                                               # "Yes" allows unmet demand, "No" otherwise                                               
 
 Utopia = Model(
     path="examples/Planning_teaching/sets",                             # Path to the sets folder
     mode="Planning",                                                    # "Planning" or "Operation" mode
-    optimization = OptimizationMode,
     ensure_feasibility = Ensure_Feasibility                                     
 )
 
@@ -38,21 +36,11 @@ Utopia.read_input_data("examples\Planning_teaching\parameters")         # Path t
 #%% 
 # Run the model to find the optimal solution
 
-if OptimizationMode == "Multi":    
-    Utopia.run_MO(
-        solver='gurobi',                                                    # Selection of the solver: 'GUROBI', 'CVXOPT', 'ECOS', 'ECOS_BB', 'GLPK', 'GLPK_MI', 'OSQP', 'SCIPY', 'SCS’
-        number_solutions = Number_solutions,
-        path = "examples/Planning_teaching/",                               # Path to the destination folder for the Pareto Frontier plot
-        verbosity=True,
-        force_rewrite= True                                                 # Overwrite the parameters files (True) or not (False)
-    )
-else:
-    Utopia.run(
-        solver='gurobi',                                                    # Selection of the solver: 'GUROBI', 'CVXOPT', 'ECOS', 'ECOS_BB', 'GLPK', 'GLPK_MI', 'OSQP', 'SCIPY', 'SCS’
-        verbosity=True,
-        force_rewrite= True                                                 # Overwrite the parameters files (True) or not (False)
-    )
-
+Utopia.run(
+    solver='gurobi',                                                    # Selection of the solver: 'GUROBI', 'CVXOPT', 'ECOS', 'ECOS_BB', 'GLPK', 'GLPK_MI', 'OSQP', 'SCIPY', 'SCS’
+    verbosity=True,
+    force_rewrite= True                                                 # Overwrite the parameters files (True) or not (False)
+)
 
 #%%
 # Create results and plots folder    
@@ -141,7 +129,7 @@ plots.plot_fuel_prod_cons(
     path = "examples/Planning_teaching/plots/prod_con_share_2020.html",     # Path to the folder in which the plot will be saved
     years = ["Y0"],                                                         # Year considered 
     fuel_group = 'Electricity',                                             # The group of the carriers, reported in the configuration file, to be plotted
-    trade=True,                                                             # Trade can be included (True) or not (False)
+    trade=False,                                                             # Only in case of Multi region model trade can be included (True) or not (False)
     regions="all",                                                          # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
     aggregate=False                                                         # True to aggregate the results of each region, False to plot them separately
 )
@@ -150,7 +138,7 @@ plots.plot_fuel_prod_cons(
     path = "examples/Planning_teaching/plots/prod_con_share_2030.html",     # Path to the folder in which the plot will be saved
     years = ["Y10"],                                                        # Year considered 
     fuel_group = 'Electricity',                                             # The group of the carriers, reported in the configuration file, to be plotted
-    trade=True,                                                             # Trade can be included (True) or not (False)
+    trade=False,                                                             # Only in case of Multi region model trade can be included (True) or not (False)
     regions="all",                                                          # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
     aggregate=False                                                         # True to aggregate the results of each region, False to plot them separately
 )
@@ -171,7 +159,7 @@ plots.plot_emissions(
 # Plot the hourly production of the carrier in the fuel_group for each tech in the tech_group, from the start to the end time
 
 plots.plot_hourly_prod_by_tech(
-    path = "examples/Planning_teaching/plots/hourlyprod_2020_January.html",     # Path to the folder in which the plot will be saved
+    path = "examples/Planning_teaching/plots/hourlyprod_2020.html",     # Path to the folder in which the plot will be saved
     tech_group = 'Power Generation',                                    # The group of the techs, reported in the configuration file, to be plotted
     fuel_group = 'Electricity',                                         # The group of the carriers, reported in the configuration file, to be plotted
     kind = "bar",                                                       # "Bar" or "Area" are the two kind of plots accepted
@@ -183,37 +171,13 @@ plots.plot_hourly_prod_by_tech(
 )
 
 plots.plot_hourly_prod_by_tech(
-    path = "examples/Planning_teaching/plots/hourlyprod_2020_July.html",     # Path to the folder in which the plot will be saved
-    tech_group = 'Power Generation',                                    # The group of the techs, reported in the configuration file, to be plotted
-    fuel_group = 'Electricity',                                         # The group of the carriers, reported in the configuration file, to be plotted
-    kind = "bar",                                                       # "Bar" or "Area" are the two kind of plots accepted
-    year = ["Y0"],                                                      # Year considered 
-    start="2020-07-01 00:00:00",                                        # Starting day and time
-    end="2020-07-01 23:00:00",                                          # Ending day and time
-    regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
-    aggregate=False                                                     # Global hourly production can be plotted (True) or emission for each region (False)
-)
-
-plots.plot_hourly_prod_by_tech(
-    path = "examples/Planning_teaching/plots/hourlyprod_2030_January.html",     # Path to the folder in which the plot will be saved
+    path = "examples/Planning_teaching/plots/hourlyprod_2030.html",     # Path to the folder in which the plot will be saved
     tech_group = 'Power Generation',                                    # The group of the techs, reported in the configuration file, to be plotted
     fuel_group = 'Electricity',                                         # The group of the carriers, reported in the configuration file, to be plotted
     kind = "bar",                                                       # "Bar" or "Area" are the two kind of plots accepted
     year = ["Y10"],                                                     # Year considered 
     start="2030-01-01 00:00:00",                                        # Starting day and time
     end="2030-01-01 23:00:00",                                          # Ending day and time
-    regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
-    aggregate=False                                                     # Global hourly production can be plotted (True) or emission for each region (False)
-)
-
-plots.plot_hourly_prod_by_tech(
-    path = "examples/Planning_teaching/plots/hourlyprod_2030_July.html",     # Path to the folder in which the plot will be saved
-    tech_group = 'Power Generation',                                    # The group of the techs, reported in the configuration file, to be plotted
-    fuel_group = 'Electricity',                                         # The group of the carriers, reported in the configuration file, to be plotted
-    kind = "bar",                                                       # "Bar" or "Area" are the two kind of plots accepted
-    year = ["Y10"],                                                     # Year considered 
-    start="2030-07-01 00:00:00",                                        # Starting day and time
-    end="2030-07-01 23:00:00",                                          # Ending day and time
     regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
     aggregate=False                                                     # Global hourly production can be plotted (True) or emission for each region (False)
 )

@@ -10,7 +10,7 @@ import numpy as np
 from collections import namedtuple
 from hypatia.backend.ModelData import ModelData
 from hypatia.backend.ModelVariables import ModelVariables
-from hypatia.utility.constants import ModelMode, OptimizationMode, EnsureFeasibility
+from hypatia.utility.constants import ModelMode, EnsureFeasibility
 from hypatia.utility.utility import (
     _calc_variable_overall,
     _calc_production_overall,
@@ -33,10 +33,6 @@ RESULTS = [
     "production_annual",
     "technology_use",
     "consumption_annual",
-    "line_import",
-    "line_import_annual",
-    "line_export",
-    "line_export_annual",
     "unmet_demand_annual",
     "cost_fix",
     "cost_variable",
@@ -67,6 +63,13 @@ PLANNING_RESULTS = [
     "salvage_inv",
     "cost_inv_tax",
     "cost_inv_sub",
+]
+
+MULTI_NODE_RESULTS = [
+    "line_import",
+    "line_import_annual",
+    "line_export",
+    "line_export_annual",
 ]
 
 
@@ -103,11 +106,6 @@ class BuildModel:
         if not isinstance(timeslice_fraction, int):
             timeslice_fraction.shape = (len(self.model_data.settings.time_steps), 1)
         self.timeslice_fraction = timeslice_fraction
-
-        # calling the methods based on the defined mode by the user
-        if self.model_data.settings.optimization == OptimizationMode.Multi:
-            self._set_regional_emission_objective()
-            self._set_final_emission_objective()
             
         if self.model_data.settings.mode == ModelMode.Planning:
             self._set_regional_objective_planning()
@@ -126,10 +124,6 @@ class BuildModel:
             else:
                 self._set_lines_objective_operation()
                 self._set_final_objective_multinode()
-                
-        self.NPC = self.global_objective
-        if self.model_data.settings.optimization == OptimizationMode.Multi:
-            self.total_emission = self.global_emission_objective
                     
 
     def _solve(self, verbosity, solver, **kwargs):
@@ -175,6 +169,8 @@ class BuildModel:
                 
             if self.model_data.settings.mode == ModelMode.Planning:
                 to_add.extend(PLANNING_RESULTS)
+            if self.model_data.settings.multi_node:
+                to_add.extend(MULTI_NODE_RESULTS)
 
             res.extend(to_add)
             result_collector = namedtuple("result", res)
@@ -189,308 +185,6 @@ class BuildModel:
                 "No solution found and no result will be uploaded to the model",
                 "critical",
             )
-            
-    def _solve_MO(self, number_solutions, path, verbosity, solver, **kwargs):
-
-        """
-        Creates a CVXPY problem instance, if the output status is optimal,
-        returns the results to the interface
-        """ 
-        
-        print("\n ------------------- NEW RUN ------------------- \n")
-        
-        if self.model_data.settings.optimization == OptimizationMode.Single:
-            return print(
-                    "Wrong run function. Use run"
-                    ) 
-
-        objective = cp.Minimize(self.global_objective)     
-        problem = cp.Problem(objective, self.constr)
-        problem.solve(solver=solver, verbose=verbosity, **kwargs)
-
-        if problem.status == "optimal":
-
-            res = RESULTS.copy()
-            to_add = []
-            if self.model_data.settings.multi_node:
-                if self.model_data.settings.mode == ModelMode.Planning:
-                    to_add = [
-                        "line_totalcapacity",
-                        "line_new_capacity",
-                        "real_new_line_capacity",
-                        "line_decommissioned_capacity",
-                        "cost_inv_line",
-                        "cost_fix_line",
-                        "cost_decom_line",
-                        "cost_variable_line",
-                        "tot_cost_multi_node"
-                    ]
-                else:
-                    to_add = [
-                        "line_totalcapacity",
-                        "cost_fix_line",
-                        "cost_variable_line",
-                        "tot_cost_multi_node"
-                    ]
-            else:
-                to_add = [
-                    "tot_cost_single_node"
-                    ]
-                
-            if self.model_data.settings.mode == ModelMode.Planning:
-                to_add.extend(PLANNING_RESULTS)
-
-            res.extend(to_add)
-            result_collector = namedtuple("result", res)
-            results = result_collector(
-                **{result: getattr(self.vars, result) for result in res}
-            )
-            
-            Min_NPC = self.global_objective.value
-            if self.model_data.settings.mode == ModelMode.Operation:
-                Min_NPC = self.global_objective.value[0]
-            Max_emissions = results.tot_emissions.value
-
-        else:
-            print(
-                "No solution found and no result will be uploaded to the model",
-                "critical",
-            )
-            
-        print("\n ------------------- NEW RUN ------------------- \n")
-            
-        objective = cp.Minimize(self.global_emission_objective)     
-        problem = cp.Problem(objective, self.constr)
-        problem.solve(solver=solver, verbose=verbosity, **kwargs)
-
-        if problem.status == "optimal":
-
-            res = RESULTS.copy()
-            to_add = []
-            if self.model_data.settings.multi_node:
-                if self.model_data.settings.mode == ModelMode.Planning:
-                    to_add = [
-                        "line_totalcapacity",
-                        "line_new_capacity",
-                        "real_new_line_capacity",
-                        "line_decommissioned_capacity",
-                        "cost_inv_line",
-                        "cost_fix_line",
-                        "cost_decom_line",
-                        "cost_variable_line",
-                        "tot_cost_multi_node"
-                    ]
-                else:
-                    to_add = [
-                        "line_totalcapacity",
-                        "cost_fix_line",
-                        "cost_variable_line",
-                        "tot_cost_multi_node"
-                    ]
-            else:
-                to_add = [
-                    "tot_cost_single_node"
-                    ]
-                
-            if self.model_data.settings.mode == ModelMode.Planning:
-                to_add.extend(PLANNING_RESULTS)
-
-            res.extend(to_add)
-            result_collector = namedtuple("result", res)
-            results = result_collector(
-                **{result: getattr(self.vars, result) for result in res}
-            )
-            
-            if self.model_data.settings.multi_node:
-                Max_NPC = results.tot_cost_multi_node.value
-                if self.model_data.settings.mode == ModelMode.Operation:
-                    Max_NPC = results.tot_cost_multi_node.value[0]
-            else:
-                Max_NPC = results.tot_cost_single_node.value
-                if self.model_data.settings.mode == ModelMode.Operation:
-                    Max_NPC = results.tot_cost_single_node.value[0]
-            Min_emissions = self.global_emission_objective.value
-            
-        else:
-            print(
-                "No solution found and no result will be uploaded to the model",
-                "critical",
-            )
-        
-        step = (Max_emissions-Min_emissions)/(number_solutions-1)
-             
-        i = 1        
-        emission_list = []
-        while i < (number_solutions-1):
-            emission_list.append(Max_emissions-i*step)
-            i += 1
-        emission_list = [Max_emissions] + emission_list + [Min_emissions]
-        NPC_list = []
-        for emis in emission_list:
-            print("\n ------------------- NEW RUN ------------------- \n")
-            new_constr = [self.vars.tot_emissions <= emis]
-            objective = cp.Minimize(self.global_objective)     
-            problem = cp.Problem(objective, self.constr + new_constr)
-            problem.solve(solver=solver, verbose=verbosity, **kwargs)
-
-            if problem.status == "optimal":
-
-                res = RESULTS.copy()
-                to_add = []
-                if self.model_data.settings.multi_node:
-                    if self.model_data.settings.mode == ModelMode.Planning:
-                        to_add = [
-                            "line_totalcapacity",
-                            "line_new_capacity",
-                            "real_new_line_capacity",
-                            "line_decommissioned_capacity",
-                            "cost_inv_line",
-                            "cost_fix_line",
-                            "cost_decom_line",
-                            "cost_variable_line",
-                            "tot_cost_multi_node"
-                        ]
-                    else:
-                        to_add = [
-                            "line_totalcapacity",
-                            "cost_fix_line",
-                            "cost_variable_line",
-                            "tot_cost_multi_node"
-                        ]
-                else:
-                    to_add = [
-                        "tot_cost_single_node"
-                        ]
-                    
-                if self.model_data.settings.mode == ModelMode.Planning:
-                    to_add.extend(PLANNING_RESULTS)
-
-                res.extend(to_add)
-                result_collector = namedtuple("result", res)
-                results = result_collector(
-                    **{result: getattr(self.vars, result) for result in res}
-                )
-                if self.model_data.settings.mode == ModelMode.Operation:
-                    NPC_list.append(self.global_objective.value[0])
-                else:
-                    NPC_list.append(self.global_objective.value)
-                
-                new_constr = []
-                
-            else:
-                print(
-                    "No solution found and no result will be uploaded to the model",
-                    "critical",
-                )
-                
-        emission_list = [Max_emissions] + emission_list + [Min_emissions]
-        NPC_list = [Min_NPC] + NPC_list + [Max_NPC]
-        
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=emission_list,
-            y=NPC_list,
-            mode='lines+markers',
-            marker=dict(
-                size=10,
-                color='red',
-                symbol='circle'
-            )
-        ))
-
-        fig.update_layout(
-            title='Pareto Frontier',
-            xaxis_title='emissions [kg]',
-            yaxis_title='NPC [$]'
-        )
-        
-        fig.write_html(path + "ParetoFrontier.html")
-        
-        emission_ = emission_list[0:number_solutions-1]
-        NPC_ = NPC_list[0:number_solutions-1]
-            
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(
-            x=emission_,
-            y=NPC_,
-            mode='lines+markers',
-            marker=dict(
-                size=10,
-                color='red',
-                symbol='circle'
-            )
-        ))
-
-        fig.update_layout(
-            title='Pareto Frontier without max NPC',
-            xaxis_title='emissions [kg]',
-            yaxis_title='NPC [$]'
-        )
-        
-        fig.write_html(path + "ParetoFrontier_NoMaxCost.html")
-        
-        print("\nEmissions = " +str(emission_list))
-        print("NPCs = " +str(NPC_list))
-        
-        solution = int(input("\nPlease select one of the solution entering a number between 1 and Number_solutions (1: Min NPC, Number_solutions: Min Emissions): "))
-        print("\n ------------------- FINAL RUN ------------------- \n")
-        selected_emission_value = emission_list[solution-1]
-        print("Selected emission value = " + str(selected_emission_value))
-        emission_constr = [self.vars.tot_emissions <= selected_emission_value]
-        # emission_constr = [self.vars.tot_emissions == 844520166.0400091]
-        if self.model_data.settings.mode == ModelMode.Operation and solution == number_solutions:
-            objective = cp.Minimize(self.global_emission_objective)     
-            problem = cp.Problem(objective, self.constr)
-        else:
-            objective = cp.Minimize(self.global_objective)     
-            problem = cp.Problem(objective, self.constr + emission_constr)
-        problem.solve(solver=solver, verbose=verbosity, **kwargs)
-
-        if problem.status == "optimal":
-
-            res = RESULTS.copy()
-            to_add = []
-            if self.model_data.settings.multi_node:
-                if self.model_data.settings.mode == ModelMode.Planning:
-                    to_add = [
-                        "line_totalcapacity",
-                        "line_new_capacity",
-                        "real_new_line_capacity",
-                        "line_decommissioned_capacity",
-                        "cost_inv_line",
-                        "cost_fix_line",
-                        "cost_decom_line",
-                        "cost_variable_line",
-                        "tot_cost_multi_node"
-                    ]
-                else:
-                    to_add = [
-                        "line_totalcapacity",
-                        "cost_fix_line",
-                        "cost_variable_line",
-                        "tot_cost_multi_node"
-                    ]
-            else:
-                to_add = [
-                    "tot_cost_single_node"
-                    ]
-                
-            if self.model_data.settings.mode == ModelMode.Planning:
-                to_add.extend(PLANNING_RESULTS)
-
-            res.extend(to_add)
-            result_collector = namedtuple("result", res)
-            results = result_collector(
-                **{result: getattr(self.vars, result) for result in res}
-            )
-            
-        else:
-            print(
-                "No solution found and no result will be uploaded to the model",
-                "critical",
-            )
-                
-        return results
 
     def _set_regional_objective_planning(self):
 

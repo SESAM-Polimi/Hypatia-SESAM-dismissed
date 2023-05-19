@@ -36,40 +36,69 @@ class AggregatedPostProcessing(PostProcessingInterface):
 
     def process_results(self) -> Dict:
         if self._settings.mode == ModelMode.Operation:
-            return {
-                "tech_production_hourly": self.tech_carrier_out_production_hourly(),
-                "tech_production_annual": self.tech_carrier_out_production_annual(),
-                "tech_use_hourly": self.tech_carrier_in_production_hourly(),
-                "tech_use_annual": self.tech_carrier_in_production_annual(),
-                "tech_cost": self.tech_cost(),
-                "emissions": self.emission(),
-                "captured_emissions": self.emissions_captured(),
-                "total_capacity": self.total_capacity(),
-                "line_import_hourly": self.line_import_hourly(),
-                "line_import_annual": self.line_import_annual(),
-                "line_export_hourly": self.line_export_hourly(),
-                "line_export_annual": self.line_export_annual(),
-                "unmet_demand_hourly": self.unmet_demand_hourly(),
-                "unmet_demand_annual": self.unmet_demand_annual()
-            }
+            if self._settings.multi_node:
+                return {
+                    "tech_production_hourly": self.tech_carrier_out_production_hourly(),
+                    "tech_production_annual": self.tech_carrier_out_production_annual(),
+                    "tech_use_hourly": self.tech_carrier_in_production_hourly(),
+                    "tech_use_annual": self.tech_carrier_in_production_annual(),
+                    "tech_cost": self.tech_cost(),
+                    "emissions": self.emission(),
+                    "captured_emissions": self.emissions_captured(),
+                    "total_capacity": self.total_capacity(),
+                    "line_import_hourly": self.line_import_hourly(),
+                    "line_import_annual": self.line_import_annual(),
+                    "line_export_hourly": self.line_export_hourly(),
+                    "line_export_annual": self.line_export_annual(),
+                    "unmet_demand_hourly": self.unmet_demand_hourly(),
+                    "unmet_demand_annual": self.unmet_demand_annual()
+                }
+            else:
+                return {
+                    "tech_production_hourly": self.tech_carrier_out_production_hourly(),
+                    "tech_production_annual": self.tech_carrier_out_production_annual(),
+                    "tech_use_hourly": self.tech_carrier_in_production_hourly(),
+                    "tech_use_annual": self.tech_carrier_in_production_annual(),
+                    "tech_cost": self.tech_cost(),
+                    "emissions": self.emission(),
+                    "captured_emissions": self.emissions_captured(),
+                    "total_capacity": self.total_capacity(),
+                    "unmet_demand_hourly": self.unmet_demand_hourly(),
+                    "unmet_demand_annual": self.unmet_demand_annual()
+                }
         elif self._settings.mode == ModelMode.Planning:
-            return {
-                "tech_production_hourly": self.tech_carrier_out_production_hourly(),
-                "tech_production_annual": self.tech_carrier_out_production_annual(),
-                "tech_use_hourly": self.tech_carrier_in_production_hourly(),
-                "tech_use_annual": self.tech_carrier_in_production_annual(),
-                "tech_cost": self.tech_cost(),
-                "emissions": self.emission(),
-                "captured_emissions": self.emissions_captured(),
-                "total_capacity": self.total_capacity(),
-                "new_capacity": self.real_new_capacity(),
-                "line_import_hourly": self.line_import_hourly(),
-                "line_import_annual": self.line_import_annual(),
-                "line_export_hourly": self.line_export_hourly(),
-                "line_export_annual": self.line_export_annual(),
-                "unmet_demand_hourly": self.unmet_demand_hourly(),
-                "unmet_demand_annual": self.unmet_demand_annual()
-            }
+            if self._settings.multi_node:
+                return {
+                    "tech_production_hourly": self.tech_carrier_out_production_hourly(),
+                    "tech_production_annual": self.tech_carrier_out_production_annual(),
+                    "tech_use_hourly": self.tech_carrier_in_production_hourly(),
+                    "tech_use_annual": self.tech_carrier_in_production_annual(),
+                    "tech_cost": self.tech_cost(),
+                    "emissions": self.emission(),
+                    "captured_emissions": self.emissions_captured(),
+                    "total_capacity": self.total_capacity(),
+                    "new_capacity": self.real_new_capacity(),
+                    "line_import_hourly": self.line_import_hourly(),
+                    "line_import_annual": self.line_import_annual(),
+                    "line_export_hourly": self.line_export_hourly(),
+                    "line_export_annual": self.line_export_annual(),
+                    "unmet_demand_hourly": self.unmet_demand_hourly(),
+                    "unmet_demand_annual": self.unmet_demand_annual()
+                }
+            else:
+                return {
+                    "tech_production_hourly": self.tech_carrier_out_production_hourly(),
+                    "tech_production_annual": self.tech_carrier_out_production_annual(),
+                    "tech_use_hourly": self.tech_carrier_in_production_hourly(),
+                    "tech_use_annual": self.tech_carrier_in_production_annual(),
+                    "tech_cost": self.tech_cost(),
+                    "emissions": self.emission(),
+                    "captured_emissions": self.emissions_captured(),
+                    "total_capacity": self.total_capacity(),
+                    "new_capacity": self.real_new_capacity(),
+                    "unmet_demand_hourly": self.unmet_demand_hourly(),
+                    "unmet_demand_annual": self.unmet_demand_annual()
+                }
 
 
     def tech_to_carrier_out_steps(self):
