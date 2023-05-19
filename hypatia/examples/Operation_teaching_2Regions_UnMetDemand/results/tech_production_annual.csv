@@ -1,0 +1,15 @@
+,Year,Region,Technology,Carrier,Value
+0,2020,reg1,Natural_gas_supply,Natural_gas,119222146.39342658
+1,2020,reg1,Oil_supply,Oil,12109270.398333346
+2,2020,reg1,Wind_PP,Electricity,62219750.0
+3,2020,reg1,Hydro_PP,Electricity,652074650.881363
+4,2020,reg1,HFO_PP,Electricity,5994088847.175005
+5,2020,reg1,OCGT_PP,Electricity,407858962.81191236
+6,2020,reg1,Elec_distribution,Final_electricity,7116242210.86828
+7,2020,reg2,Oil_supply,Oil,824945.3831669635
+8,2020,reg2,Biomass_waste_supply,Biofuels_waste,99425843.19998474
+9,2020,reg2,Geo_PP,Electricity,5465849880.4427395
+10,2020,reg2,Hydro_PP,Electricity,2382493860.53301
+11,2020,reg2,HFO_PP,Electricity,408347964.66764694
+12,2020,reg2,BW_PP,Electricity,121796657.9199813
+13,2020,reg2,Elec_distribution,Final_electricity,8378488363.563376

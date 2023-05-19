@@ -1,0 +1,11 @@
+,Year,From reg,To reg,Carrier,Value
+0,2020,reg1,reg2,Natural_gas,0.0
+1,2020,reg1,reg2,Biofuels_waste,0.0
+2,2020,reg1,reg2,Oil,0.0
+3,2020,reg1,reg2,Electricity,0.0
+4,2020,reg1,reg2,Final_electricity,0.0
+5,2020,reg2,reg1,Natural_gas,0.0
+6,2020,reg2,reg1,Biofuels_waste,0.0
+7,2020,reg2,reg1,Oil,0.0
+8,2020,reg2,reg1,Electricity,0.0
+9,2020,reg2,reg1,Final_electricity,3100638682.442092
