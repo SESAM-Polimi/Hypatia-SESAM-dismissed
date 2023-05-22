@@ -189,6 +189,9 @@ class Plotter:
         self.mode = deepcopy(
             results.get_model_data().settings.mode
         )
+        self.settings = deepcopy(
+            results.get_model_data().settings
+            )
 
         reformed_sets = {}
         for region in self.regions:
@@ -230,14 +233,24 @@ class Plotter:
     def _read_config_file(self, config):
         """Reads the config file and checks the consistency"""
         configs = {}
-        for sheet in ["Techs", "Importexport", "Fuels", "Regions", "Emissions"]:
-            data = pd.read_excel(io=config, sheet_name=sheet, index_col=0, header=0,)
-
-            if data.isnull().values.any():
-                raise Exception(
-                    f"nans are not acceptable in the config file. sheet_name = {sheet}"
-                )
-            configs[sheet.lower()] = data
+        if self.settings.multi_node:
+            for sheet in ["Techs", "Importexport", "Fuels", "Regions", "Emissions"]:
+                data = pd.read_excel(io=config, sheet_name=sheet, index_col=0, header=0,)
+    
+                if data.isnull().values.any():
+                    raise Exception(
+                        f"nans are not acceptable in the config file. sheet_name = {sheet}"
+                    )
+                configs[sheet.lower()] = data
+        else:
+            for sheet in ["Techs", "Fuels", "Regions", "Emissions"]:
+                data = pd.read_excel(io=config, sheet_name=sheet, index_col=0, header=0,)
+    
+                if data.isnull().values.any():
+                    raise Exception(
+                        f"nans are not acceptable in the config file. sheet_name = {sheet}"
+                    )
+                configs[sheet.lower()] = data
         self.configs = configs
 
     def _take_units(self, _set, item, level):
@@ -1253,45 +1266,64 @@ class Plotter:
             if not aggregate:
                 legends = set()
             
-            to_plots_trade = []   
-            for regions in self.configs["regions"].index:
-                if(regions == region):
-                    continue
-                
-                fuel = self.configs["fuels"]
-                fuel = fuel[fuel["fuel_group"].isin(str2ls(fuel_group))].index
-                
-                columns = self.glob_mapping["fuels"]["Carr_name"].index
-                imports = self.data.line_import[region][regions]
-                imports = pd.DataFrame(imports.value, index = indexer_time, columns = columns)
-
-                imports = pd.DataFrame(imports[fuel].values, 
-                                       index = indexer_time, 
-                                       columns = ["Import to " + region + " from " + regions]*len(fuel))
-
-                to_plots_trade.append(
-                    imports.loc[year]
-                )
-                  
-            for regions in self.configs["regions"].index:
-                if(regions == region):
-                    continue
-                
-                fuel = self.configs["fuels"]
-                fuel = fuel[fuel["fuel_group"].isin(str2ls(fuel_group))].index
-                
-                columns = self.glob_mapping["fuels"]["Carr_name"].index
-                exports = self.data.line_export[region][regions]
-                exports = pd.DataFrame(exports.value, index = indexer_time, columns = columns)
-
-                exports = pd.DataFrame(exports[fuel].values,
-                                       index = indexer_time, 
-                                       columns = ["Export from " + region + " to " + regions]*len(fuel))
-
-                to_plots_trade.append(
-                    -exports.loc[year]
-                )            
-                
+            if self.settings.multi_node:
+                to_plots_trade = []   
+                for regions in self.configs["regions"].index:
+                    if(regions == region):
+                        continue
+                    
+                    fuel = self.configs["fuels"]
+                    fuel = fuel[fuel["fuel_group"].isin(str2ls(fuel_group))].index
+                    
+                    columns = self.glob_mapping["fuels"]["Carr_name"].index
+                    imports = self.data.line_import[region][regions]
+                    imports = pd.DataFrame(imports.value, index = indexer_time, columns = columns)
+    
+                    imports = pd.DataFrame(imports[fuel].values, 
+                                           index = indexer_time, 
+                                           columns = ["Import to " + region + " from " + regions]*len(fuel))
+    
+                    to_plots_trade.append(
+                        imports.loc[year]
+                    )
+                      
+                for regions in self.configs["regions"].index:
+                    if(regions == region):
+                        continue
+                    
+                    fuel = self.configs["fuels"]
+                    fuel = fuel[fuel["fuel_group"].isin(str2ls(fuel_group))].index
+                    
+                    columns = self.glob_mapping["fuels"]["Carr_name"].index
+                    exports = self.data.line_export[region][regions]
+                    exports = pd.DataFrame(exports.value, index = indexer_time, columns = columns)
+    
+                    exports = pd.DataFrame(exports[fuel].values,
+                                           index = indexer_time, 
+                                           columns = ["Export from " + region + " to " + regions]*len(fuel))
+    
+                    to_plots_trade.append(
+                        -exports.loc[year]
+                    )
+                    
+            to_plot_unmets = []
+            fuel = self.configs["fuels"]
+            fuel = fuel[fuel["fuel_group"].isin(str2ls(fuel_group))].index
+            
+            for carr in fuel:
+                if carr in self.glob_mapping["fuels"].loc[self.glob_mapping["fuels"]["Carr_type"]=="Demand"].index:
+                    
+                    unmet_demand = self.data.unmetdemandbycarrier[region][carr]
+                    unmet_demand = pd.DataFrame(unmet_demand.value, index = indexer_time, columns = [carr])
+        
+                    unmet_demand = pd.DataFrame(unmet_demand[carr].values, 
+                                           index = indexer_time, 
+                                           columns = ["Unmet Demand " +str(carr)])
+        
+                    to_plot_unmets.append(
+                        unmet_demand.loc[year]
+                    )
+            
             to_plots = []
             # add if there are some storages consumption
             for tt in tech_type.unique():
@@ -1368,48 +1400,89 @@ class Plotter:
                     legends.add(t)
                     
             if not aggregate:
-                for to_plot_trade in to_plots_trade:
-    
-                    _year_ = self.glob_mapping["years"].loc[year]["Year_name"].to_list()
-                    # To avoid leap years,
-                    time_index = pd.date_range(
-                        start= str(_year_[0])+"-01-01 00:00:00", periods=len(to_plot_trade), freq="1h"
-                    )
-    
-                    to_plot_trade.index = time_index
-                    
-                    try:
-                        to_plot_trade = to_plot_trade.loc[start:end]
-                    except:
-                        raise ValueError("incorrect start or end.")
-    
-                    # try:
-                    #     yy = int(year) - 2021
-                    #     to_plot_trade.index = to_plot_trade.index + pd.offsets.DateOffset(years=yy)
-                    # except:
-                    #     pass
-    
-                    to_plot_trade = to_plot_trade.resample(freq)
-                    to_plot_trade = eval(f"to_plot_trade.{function}()")
-    
-                    for tt, values in to_plot_trade.items():
-    
-                        name = self.configs["importexport"].loc[tt, "line_name"]
-                        color = self.configs["importexport"].loc[tt, "line_color"]
-    
-                        fig.add_trace(
-                            plot(
-                                kind=kind,
-                                name=name,
-                                x=values.index,
-                                y=values.values*multiplier,
-                                marker_color=color,
-                                visible=visible(step_index, aggregate),
-                                showlegend=False if tt in legends else True,
-                            )
+                if self.settings.multi_node:                
+                    for to_plot_trade in to_plots_trade:
+        
+                        _year_ = self.glob_mapping["years"].loc[year]["Year_name"].to_list()
+                        # To avoid leap years,
+                        time_index = pd.date_range(
+                            start= str(_year_[0])+"-01-01 00:00:00", periods=len(to_plot_trade), freq="1h"
                         )
-    
-                        legends.add(tt)
+        
+                        to_plot_trade.index = time_index
+                        
+                        try:
+                            to_plot_trade = to_plot_trade.loc[start:end]
+                        except:
+                            raise ValueError("incorrect start or end.")
+        
+                        # try:
+                        #     yy = int(year) - 2021
+                        #     to_plot_trade.index = to_plot_trade.index + pd.offsets.DateOffset(years=yy)
+                        # except:
+                        #     pass
+        
+                        to_plot_trade = to_plot_trade.resample(freq)
+                        to_plot_trade = eval(f"to_plot_trade.{function}()")
+        
+                        for tt, values in to_plot_trade.items():
+        
+                            name = self.configs["importexport"].loc[tt, "line_name"]
+                            color = self.configs["importexport"].loc[tt, "line_color"]
+        
+                            fig.add_trace(
+                                plot(
+                                    kind=kind,
+                                    name=name,
+                                    x=values.index,
+                                    y=values.values*multiplier,
+                                    marker_color=color,
+                                    visible=visible(step_index, aggregate),
+                                    showlegend=False if tt in legends else True,
+                                )
+                            )
+        
+                            legends.add(tt)
+                            
+            for to_plot_unmet in to_plot_unmets:
+                
+                _year_ = self.glob_mapping["years"].loc[year]["Year_name"].to_list()
+                # To avoid leap years,
+                time_index = pd.date_range(
+                    start= str(_year_[0])+"-01-01 00:00:00", periods=len(to_plot_unmet), freq="1h"
+                )
+                to_plot_unmet.index = time_index
+
+                try:
+                    to_plot_unmet = to_plot_unmet.loc[start:end]
+                except:
+                    raise ValueError("incorrect start or end.")
+                # print(to_plot)
+                    
+                # try:
+                #     yy = int(year) - 2021
+                #     to_plot.index = to_plot.index + pd.offsets.DateOffset(years=yy)
+                # except:
+                #     pass
+
+                to_plot_unmet = to_plot_unmet.resample(freq)
+                to_plot_unmet = eval(f"to_plot_unmet.{function}()")
+            
+                for tt, values in to_plot_unmet.items():
+                    
+                    fig.add_trace(
+                        plot(
+                            kind=kind,
+                            name="Unmet Demand",
+                            x=values.index,
+                            y=values.values*multiplier,
+                            marker_color="#0c0c0d",
+                            visible=visible(step_index, aggregate),
+                            showlegend=False if tt in legends else True,
+                        )
+                    )
+
+                    legends.add("Unmet Demand")
                     
                 
             counter.append(

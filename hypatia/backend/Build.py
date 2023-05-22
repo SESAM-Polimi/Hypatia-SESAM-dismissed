@@ -33,10 +33,6 @@ RESULTS = [
     "production_annual",
     "technology_use",
     "consumption_annual",
-    "line_import",
-    "line_import_annual",
-    "line_export",
-    "line_export_annual",
     "unmet_demand_annual",
     "cost_fix",
     "cost_variable",
@@ -67,6 +63,13 @@ PLANNING_RESULTS = [
     "salvage_inv",
     "cost_inv_tax",
     "cost_inv_sub",
+]
+
+MULTI_NODE_RESULTS = [
+    "line_import",
+    "line_import_annual",
+    "line_export",
+    "line_export_annual",
 ]
 
 
@@ -175,6 +178,8 @@ class BuildModel:
                 
             if self.model_data.settings.mode == ModelMode.Planning:
                 to_add.extend(PLANNING_RESULTS)
+            if self.model_data.settings.multi_node:
+                to_add.extend(MULTI_NODE_RESULTS)
 
             res.extend(to_add)
             result_collector = namedtuple("result", res)
@@ -239,6 +244,8 @@ class BuildModel:
                 
             if self.model_data.settings.mode == ModelMode.Planning:
                 to_add.extend(PLANNING_RESULTS)
+            if self.model_data.settings.multi_node:
+                to_add.extend(MULTI_NODE_RESULTS)
 
             res.extend(to_add)
             result_collector = namedtuple("result", res)
@@ -294,6 +301,8 @@ class BuildModel:
                 
             if self.model_data.settings.mode == ModelMode.Planning:
                 to_add.extend(PLANNING_RESULTS)
+            if self.model_data.settings.multi_node:
+                to_add.extend(MULTI_NODE_RESULTS)
 
             res.extend(to_add)
             result_collector = namedtuple("result", res)
@@ -364,6 +373,8 @@ class BuildModel:
                     
                 if self.model_data.settings.mode == ModelMode.Planning:
                     to_add.extend(PLANNING_RESULTS)
+                if self.model_data.settings.multi_node:
+                    to_add.extend(MULTI_NODE_RESULTS)
 
                 res.extend(to_add)
                 result_collector = namedtuple("result", res)
@@ -477,6 +488,8 @@ class BuildModel:
                 
             if self.model_data.settings.mode == ModelMode.Planning:
                 to_add.extend(PLANNING_RESULTS)
+            if self.model_data.settings.multi_node:
+                to_add.extend(MULTI_NODE_RESULTS)
 
             res.extend(to_add)
             result_collector = namedtuple("result", res)

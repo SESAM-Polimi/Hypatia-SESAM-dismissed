@@ -267,8 +267,6 @@ class Model:
         
         self.__model_data.settings
     
-        # for i in range(len(self.results_list)):
-        #     print(i)
         if os.path.exists(path):
             if not force_rewrite:
                 raise ResultOverWrite(
@@ -350,16 +348,25 @@ class Model:
         )
         emissions_sheet.index.name = 'Emission'
 
-
-        with pd.ExcelWriter(path) as file:
-            for sheet in [
-                "techs_sheet",
-                "importexport_sheet",
-                "fuels_sheet",
-                "regions_sheet",
-                "emissions_sheet",
-            ]:
-                eval(sheet).to_excel(file, sheet_name=sheet.split("_")[0].title())
+        if self.__settings.multi_node:
+            with pd.ExcelWriter(path) as file:
+                for sheet in [
+                    "techs_sheet",
+                    "importexport_sheet",
+                    "fuels_sheet",
+                    "regions_sheet",
+                    "emissions_sheet",
+                ]:
+                    eval(sheet).to_excel(file, sheet_name=sheet.split("_")[0].title())
+        else:
+            with pd.ExcelWriter(path) as file:
+                for sheet in [
+                    "techs_sheet",
+                    "fuels_sheet",
+                    "regions_sheet",
+                    "emissions_sheet",
+                ]:
+                    eval(sheet).to_excel(file, sheet_name=sheet.split("_")[0].title())
 
     def create_aggregation_config_file(self, path):
         """Creates a config for defining aggregation. Used only during the Italy2020 project (will not be merged to main)
