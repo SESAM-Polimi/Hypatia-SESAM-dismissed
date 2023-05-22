@@ -46,10 +46,10 @@ Utopia.run(
 # Create results and plots folder    
     
 if not os.path.exists("examples/Operation_teaching/results"):
-    os.mkdir("examples/Planning_teaching/results")
+    os.mkdir("examples/Operation_teaching/results")
     
 if not os.path.exists("examples/Operation_teaching/plots"):
-    os.mkdir("examples/Planning_teaching/plots")
+    os.mkdir("examples/Operation_teaching/plots")
 
 #%% 
 # Save the results as csv file in the previous folder
