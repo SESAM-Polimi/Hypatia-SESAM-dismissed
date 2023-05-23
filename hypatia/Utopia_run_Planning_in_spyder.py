@@ -129,7 +129,7 @@ plots.plot_fuel_prod_cons(
     path = "examples/Planning_teaching/plots/prod_con_share_2020.html",     # Path to the folder in which the plot will be saved
     years = ["Y0"],                                                         # Year considered 
     fuel_group = 'Electricity',                                             # The group of the carriers, reported in the configuration file, to be plotted
-    trade=False,                                                             # Only in case of Multi region model trade can be included (True) or not (False)
+    trade=True,                                                             # Only in case of Multi region model trade can be included (True) or not (False)
     regions="all",                                                          # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
     aggregate=False                                                         # True to aggregate the results of each region, False to plot them separately
 )
@@ -138,7 +138,7 @@ plots.plot_fuel_prod_cons(
     path = "examples/Planning_teaching/plots/prod_con_share_2030.html",     # Path to the folder in which the plot will be saved
     years = ["Y10"],                                                        # Year considered 
     fuel_group = 'Electricity',                                             # The group of the carriers, reported in the configuration file, to be plotted
-    trade=False,                                                             # Only in case of Multi region model trade can be included (True) or not (False)
+    trade=True,                                                             # Only in case of Multi region model trade can be included (True) or not (False)
     regions="all",                                                          # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
     aggregate=False                                                         # True to aggregate the results of each region, False to plot them separately
 )

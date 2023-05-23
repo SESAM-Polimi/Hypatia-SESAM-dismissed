@@ -796,8 +796,8 @@ class ModelVariables():
                                 .values
                             )
                             
-                        length_ratio = cp.multiply(line_length, 0.01)
-                        line_efficiency = (cp.exp(cp.multiply(np.log(line_eff), length_ratio)))
+                        # length_ratio = cp.multiply(line_length, 0.01)
+                        # line_efficiency = (cp.exp(cp.multiply(np.log(line_eff), length_ratio)))
 
                         totalimportbycarrier_regional[carr] += cp.multiply(
                             self.line_import[reg][key][
@@ -806,7 +806,7 @@ class ModelVariables():
                                     self.model_data.settings.global_settings["Carriers_glob"]["Carrier"]
                                 ).index(carr),
                             ],
-                            line_efficiency,
+                            line_eff,
                         )
 
                         totalexportbycarrier_regional[carr] += self.line_export[reg][key][

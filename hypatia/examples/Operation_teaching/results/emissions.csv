@@ -1,0 +1,13 @@
+,Datetime,Region,Technology,Emission,Value
+0,2020,reg1,Natural_gas_supply,CO2,0.0
+1,2020,reg1,Oil_supply,CO2,0.0
+2,2020,reg1,Wind_PP,CO2,0.0
+3,2020,reg1,Hydro_PP,CO2,0.0
+4,2020,reg1,HFO_PP,CO2,0.0
+5,2020,reg1,OCGT_PP,CO2,0.0
+6,2020,reg2,Oil_supply,CO2,0.0
+7,2020,reg2,Biomass_waste_supply,CO2,0.0
+8,2020,reg2,Geo_PP,CO2,0.0
+9,2020,reg2,Hydro_PP,CO2,0.0
+10,2020,reg2,HFO_PP,CO2,0.0
+11,2020,reg2,BW_PP,CO2,0.0
