@@ -15,7 +15,7 @@ from hypatia import Plotter
 Ensure_Feasibility = "Yes"                                               # "Yes" allows unmet demand, "No" otherwise                                               
 
 Utopia = Model(
-    path="examples/Operation_teaching/sets",                             # Path to the sets folder
+    path="examples/CCS/sets",                             # Path to the sets folder
     mode="Operation",                                                    # "Planning" or "Operation" mode
     ensure_feasibility = Ensure_Feasibility                                     
 )
@@ -23,15 +23,15 @@ Utopia = Model(
 #%% 
 # Create the parameters with default values
 
-# Utopia.create_data_excels(
-#     path ='examples\Operation_teaching\parameters',                      # Path to the parameters folder
-#     force_rewrite=True                                                  # Overwrite the parameters files (True) or not (False)
-# )
+ Utopia.create_data_excels(
+     path ='examples\CCS\parameters',                      # Path to the parameters folder
+     force_rewrite=True                                                  # Overwrite the parameters files (True) or not (False)
+ )
 
 #%% 
 # Read the parameters
 
-Utopia.read_input_data("examples\Operation_teaching\parameters")         # Path to the parameters folder
+Utopia.read_input_data("examples\CCS\parameters")         # Path to the parameters folder
 
 #%% 
 # Run the model to find the optimal solution
@@ -55,7 +55,7 @@ if not os.path.exists("examples/Operation_teaching/plots"):
 # Save the results as csv file in the previous folder
 
 Utopia.to_csv(
-    path='examples/Operation_teaching/results',                         # Path to the destination folder for the results
+    path='examples/CCS/results',                         # Path to the destination folder for the results
     force_rewrite=True,                                                 # Overwrite the parameters files (True) or not (False)
     postprocessing_module="aggregated"                                  # "default" and "aggregated" are the two options
 )
@@ -72,7 +72,7 @@ Utopia.to_csv(
 
 plots = Plotter(
     results = Utopia,                                                   # Name of the Model
-    config = 'examples/Operation_teaching/config.xlsx',                 # Path to the config file
+    config = 'examples/Operation_teaching_2Regions/config.xlsx',                 # Path to the config file
     hourly_resolution = True,                                           # if model has an hourly resultion otherwise False
 )
 
@@ -85,7 +85,7 @@ plots = Plotter(
 # Plot the total capacity of each technology in the tech_group in each year and save it in the plots folder 
 
 plots.plot_total_capacity(
-    path = 'examples/Operation_teaching/plots/totalcapacity.html',      # Path to the folder in which the plot will be saved
+    path = 'examples/Operation_teaching_2Regions/plots/totalcapacity.html',      # Path to the folder in which the plot will be saved
     tech_group = 'Power Generation',                                    # The group of the techs, reported in the configuration file, to be plotted
     kind= "bar",                                                        # "Bar" or "Area" are the two kind of plots accepted
     decom_cap=True,                                                     # Decommissioning capacity can be included (True) or not (False)
@@ -109,7 +109,7 @@ plots.plot_prod_by_tech(
 
 plots.plot_use_by_technology(
     path = 'examples/Operation_teaching/plots/use_by_tech.html',        # Path to the folder in which the plot will be saved
-    fuel_group = 'Oil',                                                 # The group of the carriers, reported in the configuration file, to be plotted
+    fuel_group = 'Natural Gas',                                                 # The group of the carriers, reported in the configuration file, to be plotted
     kind="bar",                                                         # "Bar" or "Area" are the two kind of plots accepted
     regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
     aggregate=False                                                     # True to aggregate the results of each region, False to plot them separately

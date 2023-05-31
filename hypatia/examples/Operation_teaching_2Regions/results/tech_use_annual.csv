@@ -1,7 +1,5 @@
 ,Year,Region,Technology,Carrier,Value
-0,2020,reg1,HFO_PP,Oil,4307470.756146959
-1,2020,reg1,OCGT_PP,Natural_gas,0.0
-2,2020,reg1,Elec_distribution,Electricity,2838004144.95605
-3,2020,reg2,HFO_PP,Oil,1004.8595352611336
-4,2020,reg2,BW_PP,Biofuels_waste,0.0
-5,2020,reg2,Elec_distribution,Electricity,6240795677.790107
+0,2020,reg1,OCGT_PP,Natural_gas,5746822064.484095
+1,2020,reg1,Elec_distribution,Electricity,3531367193.6615186
+2,2020,reg2,OCGT_PP,Natural_gas,4944114996.992664
+3,2020,reg2,Elec_distribution,Electricity,4554039509.2544155

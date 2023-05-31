@@ -1,12 +1,13 @@
 from hypatia.postprocessing.PostProcessingInterface import PostProcessingInterface
 from hypatia.utility.constants import ModelMode
-from hypatia.utility.utility import get_emission_types
+from hypatia.utility.utility import get_emission_types, stack
 from datetime import (
     datetime,
     timedelta
 )
 import pandas as pd
 import numpy as np
+import cvxpy as cp
 import os
 from typing import Dict
 import os
@@ -126,6 +127,7 @@ class AggregatedPostProcessing(PostProcessingInterface):
     
     def tech_to_carrier_out(self):
         years = self._settings.years
+        time_fraction = self._settings.time_steps
         tech_to_carriers = {}
         for region in self._settings.regions:
             carrier_out = self._settings.regional_settings[region]["Carrier_output"]
@@ -143,6 +145,18 @@ class AggregatedPostProcessing(PostProcessingInterface):
                         )
                     elif len(carriers) > 1:
                         carrier_ratio_out = self._regional_parameters[region]["carrier_ratio_out"]
+                        activity_annual = cp.sum(carrier_ratio_out.values[0 : len(time_fraction),:], axis=0, keepdims=True)/len(time_fraction)
+                        for indx, year in enumerate(years[1:]):
+
+                            activity_annual_rest = cp.sum(
+                                carrier_ratio_out.values[(indx + 1) * len(time_fraction) : (indx + 2) * len(time_fraction), :],
+                                axis=0,
+                                keepdims=True,
+                            )/len(time_fraction)
+                            activity_annual = stack(activity_annual, activity_annual_rest)
+                            
+                        carrier_ratio_out = pd.DataFrame(activity_annual.value, columns = carrier_ratio_out.columns, index = pd.Index(years, name="Years"))
+                        
                         tech_to_carriers[region][tech] = carrier_ratio_out[tech]
 
         return tech_to_carriers
@@ -171,6 +185,7 @@ class AggregatedPostProcessing(PostProcessingInterface):
     
     def tech_to_carrier_in(self):
         years = self._settings.years
+        time_fraction = self._settings.time_steps
         tech_to_carriers = {}
         for region in self._settings.regions:
             carrier_out = self._settings.regional_settings[region]["Carrier_input"]
@@ -188,7 +203,20 @@ class AggregatedPostProcessing(PostProcessingInterface):
                         )
                     elif len(carriers) > 1:
                         carrier_ratio_in = self._regional_parameters[region]["carrier_ratio_in"]
+                        activity_annual = cp.sum(carrier_ratio_in.values[0 : len(time_fraction),:], axis=0, keepdims=True)/len(time_fraction)
+                        for indx, year in enumerate(years[1:]):
+
+                            activity_annual_rest = cp.sum(
+                                carrier_ratio_in.values[(indx + 1) * len(time_fraction) : (indx + 2) * len(time_fraction), :],
+                                axis=0,
+                                keepdims=True,
+                            )/len(time_fraction)
+                            activity_annual = stack(activity_annual, activity_annual_rest)
+                            
+                        carrier_ratio_in = pd.DataFrame(activity_annual.value, columns = carrier_ratio_in.columns, index = pd.Index(years, name="Years"))
+                        
                         tech_to_carriers[region][tech] = carrier_ratio_in[tech]
+
         return tech_to_carriers
 
     def tech_carrier_out_production_hourly(self):
@@ -466,7 +494,6 @@ class AggregatedPostProcessing(PostProcessingInterface):
                     ),
                     columns=columns,
                 )
-                
                 for tech in techs:
                     res = self.tech_to_carrier_out()[region][tech].mul(frame[tech].values, axis='index')
                     res = pd.concat({tech: res}, names=['Technology'])

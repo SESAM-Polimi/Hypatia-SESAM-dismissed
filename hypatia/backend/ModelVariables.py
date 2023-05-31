@@ -377,7 +377,7 @@ class ModelVariables():
                     self.model_data.settings.time_steps                
                     )
             
-                cost_unmet_demand_regional[carr] = unmet_demand_annual_regional[carr] * 1e10
+                cost_unmet_demand_regional[carr] = unmet_demand_annual_regional[carr] * 1e30
                 
             self.real_new_capacity[reg] = real_new_capacity_regional
             self.cost_inv[reg] = cost_inv_regional
