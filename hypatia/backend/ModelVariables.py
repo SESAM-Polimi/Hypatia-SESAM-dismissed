@@ -172,9 +172,7 @@ class ModelVariables():
         return line_newcapacity
     
     def create_unmet_demand_by_carrier(self):
-        # if not self.model_data.settings.ensure_feasibility == EnsureFeasibility.UnMetDemand:
-        #     return None
-        
+
         unmetdemandbycarrier = {}
         for reg in self.model_data.settings.regions:
 

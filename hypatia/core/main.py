@@ -59,7 +59,13 @@ class Model:
 
                 * 'Planning'
                 * 'Operation'
-
+                
+        ensure_feasibility: str
+            Allows for unmet demand ensuring feasibility of the model. Acceptable values are:
+                
+                * 'Yes'
+                * 'No'
+                
         name : str (Optional)
             Defines the name of the model.
         """
@@ -73,6 +79,7 @@ class Model:
         self.__settings = read_settings(path=path, mode=model_mode, ensure_feasibility=ensurefeasibility)
         self.__model_data = None
         self.name = name
+        
 
     def create_data_excels(self, path, force_rewrite=False):
 

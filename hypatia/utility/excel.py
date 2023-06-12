@@ -113,8 +113,6 @@ def read_parameters(settings: ModelSettings, path: str) -> ModelData:
                 index_col=list(range(0, value["index"].nlevels)),
                 header=list(range(0, value["columns"].nlevels)),
             )
-            # parameters[key]=cp.Parameter((len(range(0, value["index"].nlevels)),len(range(0, value["columns"].nlevels))), parameters[key].values)
-            # print(parameters[key])
         regional_parameters[region] = parameters
 
     return ModelData(

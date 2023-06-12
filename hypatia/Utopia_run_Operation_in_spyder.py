@@ -15,7 +15,7 @@ from hypatia import Plotter
 Ensure_Feasibility = "Yes"                                               # "Yes" allows unmet demand, "No" otherwise                                               
 
 Utopia = Model(
-    path="examples/CCS/sets",                             # Path to the sets folder
+    path="examples/Operation_teaching_2Regions/sets",                             # Path to the sets folder
     mode="Operation",                                                    # "Planning" or "Operation" mode
     ensure_feasibility = Ensure_Feasibility                                     
 )
@@ -23,10 +23,10 @@ Utopia = Model(
 #%% 
 # Create the parameters with default values
 
- Utopia.create_data_excels(
-     path ='examples\CCS\parameters',                      # Path to the parameters folder
-     force_rewrite=True                                                  # Overwrite the parameters files (True) or not (False)
- )
+Utopia.create_data_excels(
+    path ='examples\Operation_teaching_2Regions\parameters_1',                      # Path to the parameters folder
+    force_rewrite=True                                                  # Overwrite the parameters files (True) or not (False)
+)
 
 #%% 
 # Read the parameters
