@@ -60,7 +60,13 @@ class Model:
 
                 * 'Planning'
                 * 'Operation'
-
+                
+        ensure_feasibility: str
+            Allows for unmet demand ensuring feasibility of the model. Acceptable values are:
+                
+                * 'Yes'
+                * 'No'
+                
         name : str (Optional)
             Defines the name of the model.
         """
