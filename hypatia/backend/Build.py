@@ -394,8 +394,11 @@ class BuildModel:
                     "critical",
                 )
                 
-        emission_list = [Max_emissions] + emission_list + [Min_emissions]
-        NPC_list = [Min_NPC] + NPC_list + [Max_NPC]
+        print(emission_list)
+        print(NPC_list)
+        
+        emission_list = [Max_emissions] + emission_list[1:number_solutions-1] + [Min_emissions]
+        NPC_list = [Min_NPC] + NPC_list[1:number_solutions-1] + [Max_NPC]
         
         fig = go.Figure()
         fig.add_trace(go.Scatter(
