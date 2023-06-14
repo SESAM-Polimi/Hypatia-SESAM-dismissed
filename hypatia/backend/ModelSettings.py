@@ -424,7 +424,7 @@ class ModelSettings:
             regional_parameters_template[reg] = {
                 "tech_fixed_cost": {
                     "sheet_name": "F_OM",
-                    "value": 0, #cp.Parameter((len(self.years),len(indexer_reg)), value = np.zeros((len(self.years),len(indexer_reg)))),
+                    "value": 0, 
                     "index": pd.Index(self.years, name="Years"),
                     "columns": indexer_reg,
                 },
@@ -442,7 +442,7 @@ class ModelSettings:
                 },
                 "specific_emission": {
                     "sheet_name": "Specific_emission",
-                    "value": 0, # cp.Parameter(), #(len(self.years), len(specific_emission_indexer)),value = np.zeros((len(self.years), len(specific_emission_indexer)))), #shape=(len(self.years), len(specific_emission_indexer.columns)),
+                    "value": 0, 
                     "index": pd.Index(self.years, name="Years"),
                     "columns": specific_emission_indexer,
                 },
