@@ -11,7 +11,7 @@ from hypatia import Plotter
 
 #%% 
 # Create the model using as input the sets files
-OptimizationMode = "Multi"                                              # "Single" or "Multi" objective optimization
+OptimizationMode = "Multi"                                              # "Single" or "Multi" objective optimization. Multi Objective minimizes NPC and CO2
 Number_solutions = 3                                                    # Number of required solution in case of multi-objective optimizatio
 Ensure_Feasibility = "No"                                               # "Yes" allows unmet demand, "No" otherwise                                               
 
