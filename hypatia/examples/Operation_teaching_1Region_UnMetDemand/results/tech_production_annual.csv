@@ -1,0 +1,8 @@
+,Year,Region,Technology,Carrier,Value
+0,2020,reg1,Oil_supply,Oil,56671.888080939694
+1,2020,reg1,Biomass_waste_supply,Biofuels_waste,3469678.216954861
+2,2020,reg1,Geo_PP,Electricity,4951086270.805921
+3,2020,reg1,Hydro_PP,Electricity,294460469.8995306
+4,2020,reg1,HFO_PP,Electricity,28052584.600065146
+5,2020,reg1,BW_PP,Electricity,4250355.815769705
+6,2020,reg1,Elec_distribution,Final_electricity,5277849681.121285

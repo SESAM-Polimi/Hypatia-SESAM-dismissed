@@ -12,6 +12,7 @@ from hypatia.utility.constants import (
     global_set_ids,
     regional_set_ids,
     ModelMode,
+    EnsureFeasibility,
     technology_categories,
     carrier_types,
 )
@@ -54,10 +55,12 @@ class ModelSettings:
     def __init__(
         self,
         mode: ModelMode,
+        ensure_feasibility: EnsureFeasibility,
         global_settings: Dict[str, pd.DataFrame],
         regional_settings: Dict[str, Dict[str, pd.DataFrame]],
     ):
         self.mode = mode
+        self.ensure_feasibility = ensure_feasibility
         self.global_settings = global_settings
         self.regional_settings = regional_settings
         self._validate_global_settings()
@@ -421,7 +424,7 @@ class ModelSettings:
             regional_parameters_template[reg] = {
                 "tech_fixed_cost": {
                     "sheet_name": "F_OM",
-                    "value": 0, #cp.Parameter((len(self.years),len(indexer_reg)), value = np.zeros((len(self.years),len(indexer_reg)))),
+                    "value": 0, 
                     "index": pd.Index(self.years, name="Years"),
                     "columns": indexer_reg,
                 },
@@ -439,7 +442,7 @@ class ModelSettings:
                 },
                 "specific_emission": {
                     "sheet_name": "Specific_emission",
-                    "value": 0, # cp.Parameter(), #(len(self.years), len(specific_emission_indexer)),value = np.zeros((len(self.years), len(specific_emission_indexer)))), #shape=(len(self.years), len(specific_emission_indexer.columns)),
+                    "value": 0, 
                     "index": pd.Index(self.years, name="Years"),
                     "columns": specific_emission_indexer,
                 },
@@ -449,8 +452,8 @@ class ModelSettings:
                     "index": pd.Index(self.years, name="Years"),
                     "columns": indexer_reg,
                 },
-                "emission_filter_efficiency": {
-                    "sheet_name": "Emission_filter_efficiency",
+                "emission_capture_efficiency": {
+                    "sheet_name": "Emission_capture_efficiency",
                     "value": 0,
                     "index": pd.Index(self.years, name="Years"),
                     "columns": specific_emission_indexer,

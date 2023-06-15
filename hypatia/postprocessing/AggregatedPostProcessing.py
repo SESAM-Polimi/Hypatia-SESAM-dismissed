@@ -36,35 +36,96 @@ class AggregatedPostProcessing(PostProcessingInterface):
 
     def process_results(self) -> Dict:
         if self._settings.mode == ModelMode.Operation:
-            return {
-                "tech_production": self.tech_carrier_out_production(),
-                "tech_use": self.tech_carrier_in_production(),
-                "tech_cost": self.tech_cost(),
-                "emissions": self.emission(),
-                "captured_emissions": self.emissions_captured(),
-                "total_capacity": self.total_capacity(),
-                "line_import": self.line_import(),
-                "line_export": self.line_export(),
-            }
+            if self._settings.multi_node:                
+                return {
+                    "tech_production": self.tech_carrier_out_production_steps(),
+                    "tech_production_annual": self.tech_carrier_out_production_annual(),
+                    "tech_use": self.tech_carrier_in_production_steps(),
+                    "tech_use_annual": self.tech_carrier_in_production_annual(),
+                    "tech_cost": self.tech_cost(),
+                    "emissions": self.emission(),
+                    "captured_emissions": self.emissions_captured(),
+                    "total_capacity": self.total_capacity(),
+                    "line_import": self.line_import_steps(),
+                    "line_import_annual": self.line_import_annual(),
+                    "line_export": self.line_export_steps(),
+                    "line_export_annual": self.line_export_annual(),
+                    "unmet_demand": self.unmet_demand_steps(),
+                    "unmet_demand_annual": self.unmet_demand_annual()
+                }
+            else:
+                return {
+                    "tech_production": self.tech_carrier_out_production_steps(),
+                    "tech_production_annual": self.tech_carrier_out_production_annual(),
+                    "tech_use": self.tech_carrier_in_production_steps(),
+                    "tech_use_annual": self.tech_carrier_in_production_annual(),
+                    "tech_cost": self.tech_cost(),
+                    "emissions": self.emission(),
+                    "captured_emissions": self.emissions_captured(),
+                    "total_capacity": self.total_capacity(),
+                    "unmet_demand": self.unmet_demand_steps(),
+                    "unmet_demand_annual": self.unmet_demand_annual()
+                }
         elif self._settings.mode == ModelMode.Planning:
-            return {
-                "tech_production": self.tech_carrier_out_production(),
-                "tech_use": self.tech_carrier_in_production(),
-                "tech_cost": self.tech_cost(),
-                "emissions": self.emission(),
-                "captured_emissions": self.emissions_captured(),
-                "total_capacity": self.total_capacity(),
-                "new_capacity": self.new_capacity(),
-                "real_new_capacity": self.real_new_capacity(),
-                "line_import": self.line_import(),
-                "line_export": self.line_export(),
-            }
+            if self._settings.multi_node:
+                return {
+                    "tech_production": self.tech_carrier_out_production_steps(),
+                    "tech_production_annual": self.tech_carrier_out_production_annual(),
+                    "tech_use": self.tech_carrier_in_production_steps(),
+                    "tech_use_annual": self.tech_carrier_in_production_annual(),
+                    "tech_cost": self.tech_cost(),
+                    "emissions": self.emission(),
+                    "captured_emissions": self.emissions_captured(),
+                    "total_capacity": self.total_capacity(),
+                    "new_capacity": self.real_new_capacity(),
+                    "line_import": self.line_import_steps(),
+                    "line_import_annual": self.line_import_annual(),
+                    "line_export": self.line_export_steps(),
+                    "line_export_annual": self.line_export_annual(),
+                    "unmet_demand": self.unmet_demand_steps(),
+                    "unmet_demand_annual": self.unmet_demand_annual()
+                }
+            else:
+                return {
+                    "tech_production": self.tech_carrier_out_production_steps(),
+                    "tech_production_annual": self.tech_carrier_out_production_annual(),
+                    "tech_use": self.tech_carrier_in_production_steps(),
+                    "tech_use_annual": self.tech_carrier_in_production_annual(),
+                    "tech_cost": self.tech_cost(),
+                    "emissions": self.emission(),
+                    "captured_emissions": self.emissions_captured(),
+                    "total_capacity": self.total_capacity(),
+                    "new_capacity": self.real_new_capacity(),
+                    "unmet_demand": self.unmet_demand_steps(),
+                    "unmet_demand_annual": self.unmet_demand_annual()
+                }
 
 
-    def tech_to_carrier_out(self):
+    def tech_to_carrier_out_steps(self):
         years = self._settings.years
         time_fraction = self._settings.time_steps
         year_slice = AggregatedPostProcessing.year_slice_index(years, time_fraction)
+        tech_to_carriers_steps = {}
+        for region in self._settings.regions:
+            carrier_out = self._settings.regional_settings[region]["Carrier_output"]
+            tech_to_carriers_steps[region] = {}
+            for tech_type, techs in self._settings.regional_settings[region]["Technologies"].items():
+                for tech in set(techs):
+                    carriers = set(carrier_out.loc[carrier_out["Technology"] == tech]["Carrier_out"])
+                    if len(carriers) == 1:
+                        tech_to_carriers_steps[region][tech] = pd.DataFrame(
+                            data=[1]*(len(years)*len(time_fraction)),
+                            index=year_slice,
+                            columns=pd.Index(list(carriers), name="Technology")
+                        )
+                    elif len(carriers) > 1:
+                        carrier_ratio_out = self._regional_parameters[region]["carrier_ratio_out"]
+                        tech_to_carriers_steps[region][tech] = carrier_ratio_out[tech]
+
+        return tech_to_carriers_steps
+    
+    def tech_to_carrier_out(self):
+        years = self._settings.years
         tech_to_carriers = {}
         for region in self._settings.regions:
             carrier_out = self._settings.regional_settings[region]["Carrier_output"]
@@ -74,8 +135,10 @@ class AggregatedPostProcessing(PostProcessingInterface):
                     carriers = set(carrier_out.loc[carrier_out["Technology"] == tech]["Carrier_out"])
                     if len(carriers) == 1:
                         tech_to_carriers[region][tech] = pd.DataFrame(
-                            data=[1]*(len(years)*len(time_fraction)),
-                            index=year_slice,
+                            data=[1]*(len(years)),
+                            index=pd.Index(
+                                years, name="Years"
+                            ),
                             columns=pd.Index(list(carriers), name="Technology")
                         )
                     elif len(carriers) > 1:
@@ -84,10 +147,31 @@ class AggregatedPostProcessing(PostProcessingInterface):
 
         return tech_to_carriers
 
-    def tech_to_carrier_in(self):
+    def tech_to_carrier_in_steps(self):
         years = self._settings.years
         time_fraction = self._settings.time_steps
         year_slice = AggregatedPostProcessing.year_slice_index(years, time_fraction)
+        tech_to_carriers_steps = {}
+        for region in self._settings.regions:
+            carrier_out = self._settings.regional_settings[region]["Carrier_input"]
+            tech_to_carriers_steps[region] = {}
+            for tech_type, techs in self._settings.regional_settings[region]["Technologies"].items():
+                for tech in set(techs):
+                    carriers = set(carrier_out.loc[carrier_out["Technology"] == tech]["Carrier_in"])
+                    if len(carriers) == 1:
+                        tech_to_carriers_steps[region][tech] = pd.DataFrame(
+                            data=[1]*(len(years)*len(time_fraction)),
+                            index=year_slice,
+                            columns=pd.Index(list(carriers), name="Technology")
+                        )
+                    elif len(carriers) > 1:
+                        carrier_ratio_in = self._regional_parameters[region]["carrier_ratio_in"]
+                        tech_to_carriers_steps[region][tech] = carrier_ratio_in[tech]
+        return tech_to_carriers_steps
+    
+    def tech_to_carrier_in(self):
+        years = self._settings.years
+        time_fraction = self._settings.time_steps
         tech_to_carriers = {}
         for region in self._settings.regions:
             carrier_out = self._settings.regional_settings[region]["Carrier_input"]
@@ -97,17 +181,31 @@ class AggregatedPostProcessing(PostProcessingInterface):
                     carriers = set(carrier_out.loc[carrier_out["Technology"] == tech]["Carrier_in"])
                     if len(carriers) == 1:
                         tech_to_carriers[region][tech] = pd.DataFrame(
-                            data=[1]*(len(years)*len(time_fraction)),
-                            index=year_slice,
+                            data=[1]*(len(years)),
+                            index=pd.Index(
+                                years, name="Years"
+                            ),
                             columns=pd.Index(list(carriers), name="Technology")
                         )
                     elif len(carriers) > 1:
                         carrier_ratio_in = self._regional_parameters[region]["carrier_ratio_in"]
+                        activity_annual = cp.sum(carrier_ratio_in.values[0 : len(time_fraction),:], axis=0, keepdims=True)/len(time_fraction)
+                        for indx, year in enumerate(years[1:]):
+
+                            activity_annual_rest = cp.sum(
+                                carrier_ratio_in.values[(indx + 1) * len(time_fraction) : (indx + 2) * len(time_fraction), :],
+                                axis=0,
+                                keepdims=True,
+                            )/len(time_fraction)
+                            activity_annual = stack(activity_annual, activity_annual_rest)
+                            
+                        carrier_ratio_in = pd.DataFrame(activity_annual.value, columns = carrier_ratio_in.columns, index = pd.Index(years, name="Years"))
+                        
                         tech_to_carriers[region][tech] = carrier_ratio_in[tech]
 
         return tech_to_carriers
 
-    def tech_carrier_out_production(self):
+    def tech_carrier_out_production_steps(self):
         years = self._settings.years
         time_steps = self._settings.time_steps
         year_to_year_name = {
@@ -132,8 +230,9 @@ class AggregatedPostProcessing(PostProcessingInterface):
                     index=year_slice,
                     columns=columns,
                 )
+                
                 for tech in techs:
-                    res = self.tech_to_carrier_out()[region][tech].mul(frame[tech].values, axis='index')
+                    res = self.tech_to_carrier_out_steps()[region][tech].mul(frame[tech].values, axis='index')
                     res = pd.concat({tech: res}, names=['Technology'])
                     res = pd.concat({region: res}, names=['Region'])
                     res["Year"] = res.apply(
@@ -147,14 +246,73 @@ class AggregatedPostProcessing(PostProcessingInterface):
                         var_name="Carrier",
                         value_name="Value",
                     )
+                    
                     if result is None:
                         result = res
                     else:
                         result = pd.concat([result, res])
         return result.reset_index()[["Year", "Timesteps", "Region", "Technology", "Carrier", "Value"]]
-        
     
-    def line_export(self):
+    def unmet_demand_steps(self):
+        years = self._settings.years
+        time_steps = self._settings.time_steps
+        year_to_year_name = {
+            row.Year:row.Year_name for _, row in self._settings.global_settings["Years"].iterrows()
+        }
+        time_fractions = {
+            row.Timeslice:row.Timeslice_fraction for _, row in self._settings.global_settings["Timesteps"].iterrows()
+        }
+
+        year_slice = AggregatedPostProcessing.year_slice_index(years, time_steps)
+        results = self._model_results
+
+        # reg1, year, timeslice, carrier_out, unmet demand
+        result = None
+        for region in self._settings.regions:
+            for carr in self._settings.global_settings["Carriers_glob"]["Carrier"]:                
+                for key in self._settings.technologies[region].keys():
+                    
+                    if not key == "Demand":
+                        continue
+
+                    for indx, tech in enumerate(self._settings.technologies[region][key]):
+
+                        if (
+                            carr
+                            in self._settings.regional_settings[region]["Carrier_input"]
+                            .loc[
+                                self._settings.regional_settings[region]["Carrier_input"]["Technology"]
+                                == tech
+                            ]["Carrier_in"]
+                            .values
+                        ):
+                
+                            # columns = list(results.unmetdemandbycarrier[region].keys())
+                            res = pd.DataFrame(
+                                data=results.unmetdemandbycarrier[region][carr].value,
+                                index=year_slice,
+                                columns=[carr],
+                            )
+                        
+                            res = pd.concat({region: res}, names=['Region'])
+                            # res["Year"] = res.apply(
+                            #     lambda row: datetime.strptime(str(year_to_year_name[row.name[2]]), '%Y').strftime("%Y") ,
+                            #     # + timedelta(minutes=(525600  * time_fractions[int(row.name[3])] * (int(row.name[3]) - 1))),
+                            #     axis=1
+                            # )
+                            res = res.reset_index()
+                            res = res.melt(
+                                id_vars=['Years', 'Timesteps', 'Region'],
+                                var_name="Carrier",
+                                value_name="Value",
+                            )
+                            if result is None:
+                                result = res
+                            else:
+                                result = pd.concat([result, res])
+        return result.reset_index()[["Years", "Timesteps", "Region", "Carrier", "Value"]]
+    
+    def line_export_steps(self):
         years = self._settings.years
         time_steps = self._settings.time_steps
         year_to_year_name = {
@@ -200,7 +358,7 @@ class AggregatedPostProcessing(PostProcessingInterface):
                     result = pd.concat([result, res])
         return result.reset_index()[["Year", "Timesteps", "From reg", "To reg", "Carrier", "Value"]]
 
-    def line_import(self):
+    def line_import_steps(self):
         years = self._settings.years
         time_steps = self._settings.time_steps
         year_to_year_name = {
@@ -212,6 +370,7 @@ class AggregatedPostProcessing(PostProcessingInterface):
 
         year_slice = AggregatedPostProcessing.year_slice_index(years, time_steps)
         results = self._model_results
+
 
         # reg1, reg2, year, timeslice, carrier_out, prod
         result = None
@@ -246,7 +405,7 @@ class AggregatedPostProcessing(PostProcessingInterface):
                     result = pd.concat([result, res])
         return result.reset_index()[["Year", "Timesteps", "To reg", "From reg", "Carrier", "Value"]]
 
-    def tech_carrier_in_production(self):
+    def tech_carrier_in_production_steps(self):
         years = self._settings.years
         time_steps = self._settings.time_steps
         year_to_year_name = {
@@ -271,7 +430,7 @@ class AggregatedPostProcessing(PostProcessingInterface):
                     columns=columns,
                 )
                 for tech in techs:
-                    res = self.tech_to_carrier_in()[region][tech].mul(frame[tech].values, axis='index')
+                    res = self.tech_to_carrier_in_steps()[region][tech].mul(frame[tech].values, axis='index')
                     res = pd.concat({tech: res}, names=['Technology'])
                     res = pd.concat({region: res}, names=['Region'])
                     res["Year"] = res.apply(
@@ -291,28 +450,209 @@ class AggregatedPostProcessing(PostProcessingInterface):
                         result = pd.concat([result, res])
         return result.reset_index()[["Year", "Timesteps", "Region", "Technology", "Carrier", "Value"]]
     
-    def state_of_charge(self):
+    def tech_carrier_out_production_annual(self):
         years = self._settings.years
-        time_steps = self._settings.time_steps
         year_to_year_name = {
             row.Year:row.Year_name for _, row in self._settings.global_settings["Years"].iterrows()
         }
-        time_fractions = {
-            row.Timeslice:row.Timeslice_fraction for _, row in self._settings.global_settings["Timesteps"].iterrows()
-        }
-        year_slice = AggregatedPostProcessing.year_slice_index(years, time_steps)
+        
         results = self._model_results
 
         # reg1, year, timeslice, tech, carrier_out, prod
         result = None
         for region in self._settings.regions:
             for tech_type, techs in self._settings.technologies[region].items():
-                if(tech_type != "Storage"):
+                if(tech_type == "Demand"):
                     continue
                 columns = self._settings.technologies[region][tech_type]
                 frame = pd.DataFrame(
-                    data=results.storage_SOC[region].value,
-                    index=year_slice,
+                    data=results.production_annual[region][tech_type].value,
+                    index=pd.Index(
+                        years, name="Year"
+                    ),
+                    columns=columns,
+                )
+                for tech in techs:
+                    res = self.tech_to_carrier_out()[region][tech].mul(frame[tech].values, axis='index')
+                    res = pd.concat({tech: res}, names=['Technology'])
+                    res = pd.concat({region: res}, names=['Region'])                    
+                    res["Year"] = res.apply(
+                        lambda row: datetime.strptime(str(year_to_year_name[row.name[2]]), '%Y').strftime("%Y") ,
+                        # + timedelta(minutes=(525600  * time_fractions[int(row.name[3])] * (int(row.name[3]) - 1))),
+                        axis=1
+                    )
+                    
+                    res = res.reset_index()
+                    res = res.melt(
+                        id_vars=['Year','Years', 'Region', "Technology"],
+                        var_name="Carrier",
+                        value_name="Value",
+                    )
+                    
+                    if result is None:
+                        result = res
+                    else:
+                        result = pd.concat([result, res])
+        return result.reset_index()[["Year", "Region", "Technology", "Carrier", "Value"]]
+    
+    def unmet_demand_annual(self):
+        years = self._settings.years
+        year_to_year_name = {
+            row.Year:row.Year_name for _, row in self._settings.global_settings["Years"].iterrows()
+        }
+
+        results = self._model_results
+
+        # reg1, year, timeslice, carrier_out, unmet demand
+        result = None
+        for region in self._settings.regions:
+            for carr in self._settings.global_settings["Carriers_glob"]["Carrier"]:                
+                for key in self._settings.technologies[region].keys():
+                    
+                    if not key == "Demand":
+                        continue
+
+                    for indx, tech in enumerate(self._settings.technologies[region][key]):
+
+                        if (
+                            carr
+                            in self._settings.regional_settings[region]["Carrier_input"]
+                            .loc[
+                                self._settings.regional_settings[region]["Carrier_input"]["Technology"]
+                                == tech
+                            ]["Carrier_in"]
+                            .values
+                        ):
+                
+                            # columns = list(results.unmetdemandbycarrier[region].keys())
+                            res = pd.DataFrame(
+                                data=results.unmet_demand_annual[region][carr].value,
+                                index=pd.Index(
+                                    years, name="Years"
+                                ),
+                                columns=[carr],
+                            )
+                        
+                            res = pd.concat({region: res}, names=['Region'])
+                            res = res.reset_index()
+                            res = res.melt(
+                                id_vars=['Years', 'Region'],
+                                var_name="Carrier",
+                                value_name="Value",
+                            )
+
+                            if result is None:
+                                result = res
+                            else:
+                                result = pd.concat([result, res])
+        return result.reset_index()[["Years", "Region", "Carrier", "Value"]]
+    
+    def line_export_annual(self):
+        years = self._settings.years
+        year_to_year_name = {
+            row.Year:row.Year_name for _, row in self._settings.global_settings["Years"].iterrows()
+        }
+
+        results = self._model_results
+
+        # reg1, reg2, year, timeslice, carrier_out, prod
+        result = None
+        for region in self._settings.regions:
+            for regions in self._settings.regions:
+                if(regions == region):
+                    continue
+                columns = self._settings.global_settings["Carriers_glob"]["Carrier"] 
+                res = pd.DataFrame(
+                    data=results.line_export_annual[region][regions].value,
+                    index=pd.Index(
+                        years, name="Years"
+                    ),
+                    columns=columns,
+                )
+                
+                # res = self.line_carrier()[region][regions].mul(frame[regions].values, axis='index')
+                res = pd.concat({regions: res}, names=['To reg'])
+                res = pd.concat({region: res}, names=['From reg'])
+                res["Year"] = res.apply(
+                    lambda row: datetime.strptime(str(year_to_year_name[row.name[2]]), '%Y').strftime("%Y") ,
+                    # + timedelta(minutes=(525600  * time_fractions[int(row.name[3])] * (int(row.name[3]) - 1))),
+                    axis=1
+                )
+                res = res.reset_index()
+                res = res.melt(
+                    id_vars=['Year', 'Years', 'From reg', 'To reg'],
+                    var_name="Carrier",
+                    value_name="Value",
+                )
+                if result is None:
+                    result = res
+                else:
+                    result = pd.concat([result, res])
+        return result.reset_index()[["Year", "From reg", "To reg", "Carrier", "Value"]]
+
+    def line_import_annual(self):
+        years = self._settings.years
+        year_to_year_name = {
+            row.Year:row.Year_name for _, row in self._settings.global_settings["Years"].iterrows()
+        }
+
+        results = self._model_results
+
+        # reg1, reg2, year, timeslice, carrier_out, prod
+        result = None
+        for region in self._settings.regions:
+            for regions in self._settings.regions:
+                if(regions == region):
+                    continue
+                columns = self._settings.global_settings["Carriers_glob"]["Carrier"] 
+                res = pd.DataFrame(
+                    data=results.line_import_annual[region][regions].value,
+                    index=pd.Index(
+                        years, name="Years"
+                    ),
+                    columns=columns,
+                )
+                
+                # res = self.line_carrier()[region][regions].mul(frame[regions].values, axis='index')
+                res = pd.concat({regions: res}, names=['From reg'])
+                res = pd.concat({region: res}, names=['To reg'])
+                res["Year"] = res.apply(
+                    lambda row: datetime.strptime(str(year_to_year_name[row.name[2]]), '%Y').strftime("%Y") ,
+                    # + timedelta(minutes=(525600  * time_fractions[int(row.name[3])] * (int(row.name[3]) - 1))),
+                    axis=1
+                )
+                res = res.reset_index()
+                res = res.melt(
+                    id_vars=['Year', 'Years', 'To reg', 'From reg'],
+                    var_name="Carrier",
+                    value_name="Value",
+                )
+                if result is None:
+                    result = res
+                else:
+                    result = pd.concat([result, res])
+        return result.reset_index()[["Year", "To reg", "From reg", "Carrier", "Value"]]
+
+    def tech_carrier_in_production_annual(self):
+        years = self._settings.years
+        year_to_year_name = {
+            row.Year:row.Year_name for _, row in self._settings.global_settings["Years"].iterrows()
+        }
+
+        results = self._model_results
+
+        # reg1, year, timeslice, tech, carrier_out, prod
+        result = None
+        for region in self._settings.regions:
+            for tech_type, techs in self._settings.technologies[region].items():
+                if(tech_type == "Demand" or tech_type == "Supply"):
+                    continue
+                columns = self._settings.technologies[region][tech_type]
+                frame = pd.DataFrame(
+                    data=results.consumption_annual[region][tech_type].value,
+                    index=pd.Index(
+                        years, name="Year"
+                    ),
                     columns=columns,
                 )
                 for tech in techs:
@@ -326,7 +666,7 @@ class AggregatedPostProcessing(PostProcessingInterface):
                     )
                     res = res.reset_index()
                     res = res.melt(
-                        id_vars=['Year', 'Years', 'Timesteps', 'Region', "Technology"],
+                        id_vars=['Year', 'Years', 'Region', "Technology"],
                         var_name="Carrier",
                         value_name="Value",
                     )
@@ -334,7 +674,7 @@ class AggregatedPostProcessing(PostProcessingInterface):
                         result = res
                     else:
                         result = pd.concat([result, res])
-        return result.reset_index()[["Year", "Timesteps", "Region", "Technology", "Carrier", "Value"]]
+        return result.reset_index()[["Year", "Region", "Technology", "Carrier", "Value"]]
 
     def tech_cost(self):
         years = self._settings.years
@@ -389,24 +729,7 @@ class AggregatedPostProcessing(PostProcessingInterface):
                         result = tech_costs
                     else:
                         result = pd.concat([result, tech_costs])
-        return result.reset_index()[["Datetime", "Region", "Technology", "Cost", "Value"]]
-    
-    def actualized_cost(self):
-        years = self._settings.years
-        results = self._model_results
-        tech_costs_act = pd.DataFrame(
-            data=results.totalcost_allregions_act.value,
-            index=pd.Index(
-                years, name="Year"
-            ),
-            columns=["Actualized cost"],
-        )
-        result = None
-        if result is None:
-            result = tech_costs_act
-        else:
-            result = pd.concat([result, tech_costs_act])
-        return result    
+        return result.reset_index()[["Datetime", "Region", "Technology", "Cost", "Value"]] 
     
     def emission(self):
         years = self._settings.years
@@ -489,24 +812,6 @@ class AggregatedPostProcessing(PostProcessingInterface):
                     else:
                         result = pd.concat([result, tech_emissions])
         return result.reset_index()[["Datetime", "Region", "Technology", "Emission", "Value"]]
-        
-    
-    def actualized_emissions(self):
-        years = self._settings.years
-        results = self._model_results
-        emission_act = pd.DataFrame(
-            data=results.totalemission_allregions_act.value,
-            index=pd.Index(
-                years, name="Year"
-            ),
-            columns=["Actualized emission"],
-        )
-        result = None
-        if result is None:
-            result = emission_act
-        else:
-            result = pd.concat([result, emission_act])
-        return result
     
     def total_capacity(self):
         years = self._settings.years
@@ -529,52 +834,6 @@ class AggregatedPostProcessing(PostProcessingInterface):
                 columns = self._settings.technologies[region][tech_type]
                 res = pd.DataFrame(
                     data=totcap,
-                    index=pd.Index(
-                        years, name="Year"
-                    ),
-                    columns=columns,
-                )
-
-                res = pd.concat({region: res}, names=['Region'])
-                res["Datetime"] = res.apply(
-                    lambda row: datetime.strptime(str(year_to_year_name[row.name[1]]), '%Y').strftime("%Y"),
-                    axis=1
-                )
-                
-                res = res.reset_index()
-                res = res.melt(
-                    id_vars=['Datetime', 'Year', 'Region'],
-                    var_name="Technology",
-                    value_name=tech_type,
-                )
-                res = res.melt(
-                    id_vars=["Datetime", "Year", "Region", "Technology"],
-                    var_name="Tech category",
-                    value_name="Value",
-                )
-                
-                if result is None:
-                    result = res
-                else:
-                    result = pd.concat([result, res])
-        return result.reset_index()[["Datetime", "Region", "Technology", "Tech category", "Value"]]
-    
-    
-    def new_capacity(self):
-        years = self._settings.years
-        year_to_year_name = {
-            row.Year:row.Year_name for _, row in self._settings.global_settings["Years"].iterrows()
-        }
-        results = self._model_results
-
-        result = None
-        for region in self._settings.regions:
-            for tech_type, techs in results.new_capacity[region].items():
-                if(tech_type == "Demand"):
-                    continue
-                columns = self._settings.technologies[region][tech_type]
-                res = pd.DataFrame(
-                    data=results.new_capacity[region][tech_type].value,
                     index=pd.Index(
                         years, name="Year"
                     ),
@@ -661,7 +920,10 @@ def write_processed_result(postprocessed_result: Dict, path: str):
             write_processed_result(value, new_path)
 
 def Merge_results(scenarios: Dict[str, str], path: str, force_rewrite: bool = False):
-    result_df_names = ["tech_production", "tech_use", "tech_cost", "line_import", "line_export", "emissions", "captured_emissions", "total_capacity"]
+    
+    result_df_names = ["tech_production_annual", "tech_production", "tech_use_annual", 
+                       "tech_use", "tech_cost", "unmet_demand_annual", "unmet_demand",
+                       "emissions", "captured_emissions", "total_capacity", "new_capacity"]
     results = {}
     for result_df_name in result_df_names:
         results[result_df_name] = None
@@ -676,7 +938,7 @@ def Merge_results(scenarios: Dict[str, str], path: str, force_rewrite: bool = Fa
                 results[result_df_name] = old_df
             else:
                 results[result_df_name] = pd.concat([results[result_df_name], old_df])#.reset_index().drop('level_1', axis=1)
-        if result_df_name == "tech_production" or result_df_name == "tech_use" or result_df_name == "tech_cost" or result_df_name == "emissions" or result_df_name == "captured_emissions" or result_df_name == "total_capacity" or result_df_name == "new_capacity" or result_df_name == "real_new_capacity":      
+        if result_df_name == "tech_production" or result_df_name == "tech_use" or result_df_name == "tech_cost" or result_df_name == "emissions" or result_df_name == "captured_emissions" or result_df_name == "total_capacity" or result_df_name == "new_capacity":      
             results[result_df_name] = results[result_df_name].reset_index().drop('level_1', axis=1)
 
     if os.path.exists(path):
@@ -690,4 +952,3 @@ def Merge_results(scenarios: Dict[str, str], path: str, force_rewrite: bool = Fa
     os.mkdir(path)
     
     write_processed_result(results, path)
-

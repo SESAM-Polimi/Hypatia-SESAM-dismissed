@@ -17,6 +17,7 @@ from hypatia.utility.excel import (
     read_parameters,
 )
 from hypatia.utility.constants import ModelMode
+from hypatia.utility.constants import EnsureFeasibility 
 from hypatia.backend.Build import BuildModel
 from copy import deepcopy
 from hypatia.postprocessing.PostProcessingList import POSTPROCESSING_MODULES
@@ -41,9 +42,7 @@ class Model:
     A Hypatia Model
     """
 
-    def __init__(self, path, mode, name="unknown"):
-        
-        print("\n ------------------- NEW RUN ------------------- \n")
+    def __init__(self, path, mode, ensure_feasibility, name="unknown"):
 
         """Initializes a Hypatia model by passing the optimization mode and
         the path of the structural input files
@@ -60,18 +59,27 @@ class Model:
 
                 * 'Planning'
                 * 'Operation'
-
+                
+        ensure_feasibility: str
+            Allows for unmet demand ensuring feasibility of the model. Acceptable values are:
+                
+                * 'Yes'
+                * 'No'
+                
         name : str (Optional)
             Defines the name of the model.
         """
 
         assert mode in ["Planning", "Operation"], "Invalid Operation"
+        assert ensure_feasibility in ["Yes", "No"], "Invalid Input"
         model_mode = ModelMode.Planning if mode == "Planning" else ModelMode.Operation
+        ensurefeasibility = EnsureFeasibility.Yes if ensure_feasibility == "Yes" else EnsureFeasibility.No
         self.results = None
         self.backup_results = None
-        self.__settings = read_settings(path=path, mode=model_mode)
+        self.__settings = read_settings(path=path, mode=model_mode, ensure_feasibility=ensurefeasibility)
         self.__model_data = None
         self.name = name
+
 
     def create_data_excels(self, path, force_rewrite=False):
 
@@ -171,12 +179,13 @@ class Model:
             )
 
         model = BuildModel(model_data=self.__model_data)
+        self.constr_backup = model.constr
 
         results = model._solve(verbosity=verbosity, solver=solver.upper(), **kwargs)
         self.check = results
         if results is not None:
             self.results = results
-
+        
     def to_csv(self, path, postprocessing_module="default", force_rewrite=False):
         """Exports the results of the model to csv files with nested folders
 
@@ -193,6 +202,9 @@ class Model:
         if self.results == None:
             raise WrongInputMode("model has not any results")
 
+        
+        self.__model_data.settings
+    
         if os.path.exists(path):
             if not force_rewrite:
                 raise ResultOverWrite(
@@ -201,7 +213,6 @@ class Model:
                 )
         else:
             os.mkdir(path)
-        self.__model_data.settings
 
         if postprocessing_module in POSTPROCESSING_MODULES.keys():
             POSTPROCESSING_MODULES[postprocessing_module](
@@ -209,8 +220,7 @@ class Model:
                 self.results
             ).write_processed_results(path)
         else:
-            raise Exception("Post processing module do not exist")
-
+            raise Exception("Post processing module do not exist") 
 
     def create_config_file(self, path):
         """Creates a config excel file for plots
@@ -276,16 +286,25 @@ class Model:
         )
         emissions_sheet.index.name = 'Emission'
 
-
-        with pd.ExcelWriter(path) as file:
-            for sheet in [
-                "techs_sheet",
-                "importexport_sheet",
-                "fuels_sheet",
-                "regions_sheet",
-                "emissions_sheet",
-            ]:
-                eval(sheet).to_excel(file, sheet_name=sheet.split("_")[0].title())
+        if self.__settings.multi_node:
+            with pd.ExcelWriter(path) as file:
+                for sheet in [
+                    "techs_sheet",
+                    "importexport_sheet",
+                    "fuels_sheet",
+                    "regions_sheet",
+                    "emissions_sheet",
+                ]:
+                    eval(sheet).to_excel(file, sheet_name=sheet.split("_")[0].title())
+        else:
+            with pd.ExcelWriter(path) as file:
+                for sheet in [
+                    "techs_sheet",
+                    "fuels_sheet",
+                    "regions_sheet",
+                    "emissions_sheet",
+                ]:
+                    eval(sheet).to_excel(file, sheet_name=sheet.split("_")[0].title())
 
     def create_aggregation_config_file(self, path):
         """Creates a config for defining aggregation. Used only during the Italy2020 project (will not be merged to main)

@@ -1,0 +1,8 @@
+,Datetime,Region,Technology,Tech category,Value
+0,2020,reg1,Oil_supply,Supply,1e+20
+1,2020,reg1,Biomass_waste_supply,Supply,1e+20
+2,2020,reg1,Geo_PP,Supply,624000.0
+3,2020,reg1,Hydro_PP,Supply,677600.0
+4,2020,reg1,HFO_PP,Conversion,100000.0
+5,2020,reg1,BW_PP,Conversion,36000.0
+6,2020,reg1,Elec_distribution,Transmission,1e+20

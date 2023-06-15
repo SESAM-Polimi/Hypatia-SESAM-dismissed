@@ -41,5 +41,9 @@ class ModelMode(Enum):
     Operation = "Operation"
 
 class TopologyType(Enum):
-    SingleNode = "SingleNone"
+    SingleNode = "SingleNode"
     MultiNode = "MultiNode"
+    
+class EnsureFeasibility(Enum):
+    Yes = "Yes"
+    No = "No"

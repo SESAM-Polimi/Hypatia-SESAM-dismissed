@@ -1,0 +1,7 @@
+,Datetime,Region,Technology,Emission,Value
+0,2020,reg1,Oil_supply,CO2,0.0
+1,2020,reg1,Biomass_waste_supply,CO2,0.0
+2,2020,reg1,Geo_PP,CO2,0.0
+3,2020,reg1,Hydro_PP,CO2,0.0
+4,2020,reg1,HFO_PP,CO2,0.0
+5,2020,reg1,BW_PP,CO2,0.0

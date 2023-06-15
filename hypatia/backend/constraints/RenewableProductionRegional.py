@@ -227,13 +227,13 @@ class RenewableProductionRegional(Constraint):
             
             rules.append(
                 renewable_elec_prod_annual
-                - cp.multiply(self.model_data.regional_parameters[reg]["min_renewable_electric_penetration"].values, totalprodelec_annual[reg])
+                - cp.multiply(self.model_data.regional_parameters[reg]["min_renewable_electric_share"].values, totalprodelec_annual[reg])
                 >= 0
             )  
 
             rules.append(
                 renewable_prod_annual
-                - cp.multiply(self.model_data.regional_parameters[reg]["min_renewable_production"].values, totalprod_annual[reg])
+                - cp.multiply(self.model_data.regional_parameters[reg]["min_renewable_production_share"].values, totalprod_annual[reg])
                 >= 0
             )                   
                     
@@ -254,17 +254,17 @@ class RenewableProductionRegional(Constraint):
                     "index": pd.Index(["Renewable technology (1) or not (0)"], name='Parameter'),
                     "columns": indexer,
                 },
-                "min_renewable_production": {
-                    "sheet_name": "Min_RES_production",
+                "min_renewable_production_share": {
+                    "sheet_name": "Min_RES_production_share",
                     "value": 0,
                     "index": pd.Index(settings.years, name="Years"),
-                    "columns": pd.Index(["Min Renewable Production Share (%)"], name='Parameter'),
+                    "columns": pd.Index(["Min Renewable Energy Production Share (from 0 to 1)"], name='Parameter'),
                 },
-                "min_renewable_electric_penetration": {
-                    "sheet_name": "Min_RES_electric_penetration",
+                "min_renewable_electric_share": {
+                    "sheet_name": "Min_RES_electric_share",
                     "value": 0,
                     "index": pd.Index(settings.years, name="Years"),
-                    "columns": pd.Index(["Min Renewable Electric Penetration (%)"], name='Parameter'),
+                    "columns": pd.Index(["Min Renewable Electricity Production Share (from 0 to 1)"], name='Parameter'),
                 }
             }    
                 

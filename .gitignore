@@ -14,8 +14,6 @@ negar_tests.py
 # OS-specific
 .DS_Store
 
-# exmaples results
-**/results
 
 
 # Editors

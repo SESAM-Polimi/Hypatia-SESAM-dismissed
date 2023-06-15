@@ -416,6 +416,28 @@ def line_varcost(
 
     return variablecost_line
 
+def line_annual_activity(
+    line_activity, regions, main_years, time_slices
+):
+
+    """
+    Calculates the annual line activity
+    """
+
+    line_activity_annual = {}
+
+    for reg in regions:
+
+        line_activity_annual_regional = {}
+
+        for key, value in line_activity[reg].items():
+
+            line_activity_annual_regional[key] = annual_activity(value, main_years, time_slices)
+
+        line_activity_annual[reg] = line_activity_annual_regional
+
+    return line_activity_annual
+
 
 def salvage_factor(
     main_years, technologies, tlft, interest_rate, discount_rate, economiclife
@@ -462,6 +484,31 @@ def salvage_factor(
     )
 
     return salvage_factor_mod
+
+
+def unmet_demand_function(
+    unmet_demand, years, timesteps
+):
+
+    """
+    Calculates cost related to the unmet demand
+    """
+        
+    unmet_demand_bycarrier_annual = []
+
+    for year in range(0, len(years)):
+
+        unmet_demand_bycarrier_annual_rest = cp.sum(
+            unmet_demand[(year) * len(timesteps) : (year+1) * len(timesteps)],
+            axis=0,
+            keepdims=True
+        )
+
+        unmet_demand_bycarrier_annual.append(unmet_demand_bycarrier_annual_rest)
+
+    unmet_demand_annual = cp.vstack(unmet_demand_bycarrier_annual)
+
+    return unmet_demand_annual
 
 
 def storage_state_of_charge(initial_storage, flow_in, flow_out, main_years, time_steps,charge_efficiency,discharge_efficiency, BESS_total_capacity):

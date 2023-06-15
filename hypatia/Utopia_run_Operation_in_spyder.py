@@ -12,23 +12,26 @@ from hypatia import Plotter
 #%% 
 # Create the model using as input the sets files
 
+Ensure_Feasibility = "Yes"                                               # "Yes" allows unmet demand, "No" otherwise                                               
+
 Utopia = Model(
-    path="examples/Operation_teaching/sets",                           # Path to the sets folder
-    mode="Operation",                                                  # "Planning" or "Operation" mode
+    path="examples/Operation_teaching/sets",                             # Path to the sets folder
+    mode="Operation",                                                    # "Planning" or "Operation" mode
+    ensure_feasibility = Ensure_Feasibility                                     
 )
 
 #%% 
 # Create the parameters with default values
 
 # Utopia.create_data_excels(
-#     path ='examples\Operation_teaching\parameters',                    # Path to the parameters folder
-#     force_rewrite=True                                                 # Overwrite the parameters files (True) or not (False)
+#     path ='examples\Operation_teaching\parameters',                      # Path to the parameters folder
+#     force_rewrite=True                                                  # Overwrite the parameters files (True) or not (False)
 # )
 
 #%% 
 # Read the parameters
 
-Utopia.read_input_data("examples\Operation_teaching\parameters")       # Path to the parameters folder
+Utopia.read_input_data("examples\Operation_teaching\parameters")         # Path to the parameters folder
 
 #%% 
 # Run the model to find the optimal solution
@@ -39,10 +42,14 @@ Utopia.run(
     force_rewrite= True                                                 # Overwrite the parameters files (True) or not (False)
 )
 
-#%% 
-# Create the folder where to save the results
-
-# os.mkdir("examples/Operation_teaching/results/")                       # Path to the results folder
+#%%
+# Create results and plots folder    
+    
+if not os.path.exists("examples/Operation_teaching/results"):
+    os.mkdir("examples/Operation_teaching/results")
+    
+if not os.path.exists("examples/Operation_teaching/plots"):
+    os.mkdir("examples/Operation_teaching/plots")
 
 #%% 
 # Save the results as csv file in the previous folder
@@ -57,7 +64,7 @@ Utopia.to_csv(
 # Create the configuration file for the plots
 
 # Utopia.create_config_file(
-#     path = 'examples/Operation_teaching/config.xlsx'                   # Path to the config file
+#     path = 'examples/Operation_teaching/config12.xlsx'                   # Path to the config file
 # )
 
 #%% 
@@ -126,10 +133,10 @@ plots.plot_fuel_prod_cons(
 plots.plot_emissions(
     path = 'examples/Operation_teaching/plots/emissions.html',          # Path to the folder in which the plot will be saved
     tech_group = 'Power Generation',                                    # The group of the techs, reported in the configuration file, to be plotted
-    emission_type = ["CO2"],                                            # The type of the emissions, reported in the configuration file, to be plotted
+    emission_type = ["CO2 emissions"],                                            # The type of the emissions, reported in the configuration file, to be plotted
     kind="bar",                                                         # "Bar" or "Area" are the two kind of plots accepted
     regions="all",                                                      # The regions considered. "all" to consider all of them, ["reg1", ...] to consider only some regions
-    aggregate=True                                                      # Global emission can be plotted (True) or emission for each region (False)
+    aggregate=False                                                      # Global emission can be plotted (True) or emission for each region (False)
 )
 
 #%%

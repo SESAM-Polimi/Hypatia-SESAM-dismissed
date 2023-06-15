@@ -1,6 +1,7 @@
 from hypatia.utility.constants import (
     ModelMode,
-    TopologyType
+    TopologyType,
+    EnsureFeasibility
 )
 from typing import (
     Dict,
@@ -12,6 +13,7 @@ class Constraint():
     # Modes this constraint applies to
     MODES = [ModelMode.Planning, ModelMode.Operation]
     TOPOLOGY_TYPES = [TopologyType.SingleNode, TopologyType.MultiNode]
+    ENSURE_FEASIBILITY = [EnsureFeasibility.Yes, EnsureFeasibility.No]
 
     def __init__(self, model_data, model_variables):
         self.model_data = model_data
@@ -63,6 +65,9 @@ class Constraint():
     # Private
     def __matches_mode(cls, settings) -> bool:
         if(settings.mode not in cls.MODES):
+            return False
+        
+        if(settings.ensure_feasibility not in cls.ENSURE_FEASIBILITY):
             return False
 
         if settings.multi_node:

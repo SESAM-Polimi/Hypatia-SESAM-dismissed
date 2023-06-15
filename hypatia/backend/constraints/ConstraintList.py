@@ -1,4 +1,5 @@
 from hypatia.backend.constraints.Balance import Balance
+from hypatia.backend.constraints.BalanceUnMetDemand import BalanceUnMetDemand
 from hypatia.backend.constraints.TradeBalance import TradeBalance
 from hypatia.backend.constraints.ResourceTechAvailability import ResourceTechAvailability
 from hypatia.backend.constraints.TotalCapacityRegional import TotalCapacityRegional
@@ -25,6 +26,7 @@ from hypatia.backend.constraints.LandUsageGlobal import LandUsageGlobal
 
 CONSTRAINTS = [
     Balance,
+    BalanceUnMetDemand,
     TradeBalance,
     ResourceTechAvailability,
     TotalCapacityRegional,
@@ -43,7 +45,7 @@ CONSTRAINTS = [
     RenewableProductionGlobal,
     LineAvailability,
     LineNewCapacity,
-    ProductionRamping,
+    # ProductionRamping,
     RenewableProductionRegional,
     LandUsageRegional,
     LandUsageGlobal,

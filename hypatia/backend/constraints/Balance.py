@@ -1,7 +1,8 @@
 from hypatia.backend.constraints.Constraint import Constraint
 from hypatia.utility.constants import (
     ModelMode,
-    TopologyType
+    TopologyType,
+    EnsureFeasibility
 )
 import cvxpy as cp
 import numpy as np
@@ -10,18 +11,20 @@ import numpy as np
 Ensures the energy balance of each carrier within each region
 """
 class Balance(Constraint):
+    ENSURE_FEASIBILITY = [EnsureFeasibility.No]
+    
     def _check(self):
         assert hasattr(self.variables, 'totalprodbycarrier'), "totalprodbycarrier must be defined"
         assert hasattr(self.variables, 'totalimportbycarrier'), "totalimportbycarrier must be defined"
         assert hasattr(self.variables, 'totalusebycarrier'), "totalusebycarrier must be defined"
         assert hasattr(self.variables, 'totalexportbycarrier'), "totalexportbycarrier must be defined"
         assert hasattr(self.variables, 'totaldemandbycarrier'), "totaldemandbycarrier must be defined"
+        assert hasattr(self.variables, 'unmetdemandbycarrier'), "unmetdemandbycarrier must be defined"
 
     def rules(self):
         rules = []
         for reg in self.model_data.settings.regions:
             for carr in self.model_data.settings.global_settings["Carriers_glob"]["Carrier"]:
-                
                 rules.append(
                     self.variables.totalprodbycarrier[reg][carr]
                     + self.variables.totalimportbycarrier[reg][carr]

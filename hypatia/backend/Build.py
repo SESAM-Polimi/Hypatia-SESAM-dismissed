@@ -10,7 +10,7 @@ import numpy as np
 from collections import namedtuple
 from hypatia.backend.ModelData import ModelData
 from hypatia.backend.ModelVariables import ModelVariables
-from hypatia.utility.constants import ModelMode
+from hypatia.utility.constants import ModelMode, EnsureFeasibility
 from hypatia.utility.utility import (
     _calc_variable_overall,
     _calc_production_overall,
@@ -22,6 +22,7 @@ from hypatia.utility.utility import (
 )
 from hypatia.backend.constraints.ConstraintList import CONSTRAINTS
 import logging
+from plotly import graph_objs as go
 
 
 logger = logging.getLogger(__name__)
@@ -29,14 +30,16 @@ logger = logging.getLogger(__name__)
 
 RESULTS = [
     "technology_prod",
+    "production_annual",
     "technology_use",
-    "line_import",
-    "line_export",
+    "consumption_annual",
+    "unmet_demand_annual",
     "cost_fix",
     "cost_variable",
     "totalcapacity",
     "cost_fix_tax",
     "cost_fix_sub",
+    "cost_unmet_demand",
     "emission_cost_by_type",
     "emission_cost_by_region",
     "emission_by_type",
@@ -46,7 +49,9 @@ RESULTS = [
     "storage_SOC",
     "residual_capacity",
     "carrier_ratio_in",
-    "carrier_ratio_out"
+    "carrier_ratio_out",
+    "tot_emissions",
+    "unmetdemandbycarrier"
 ]
 
 PLANNING_RESULTS = [
@@ -58,8 +63,13 @@ PLANNING_RESULTS = [
     "salvage_inv",
     "cost_inv_tax",
     "cost_inv_sub",
-    "totalcost_allregions_act",
-    "totalemission_allregions_act"
+]
+
+MULTI_NODE_RESULTS = [
+    "line_import",
+    "line_import_annual",
+    "line_export",
+    "line_export_annual",
 ]
 
 
@@ -90,13 +100,13 @@ class BuildModel:
         self.constr = []
         for constraint in CONSTRAINTS:
             self.constr += constraint(self.model_data, self.vars).get()
-
+            
+        
         timeslice_fraction = self.model_data.settings.timeslice_fraction
         if not isinstance(timeslice_fraction, int):
             timeslice_fraction.shape = (len(self.model_data.settings.time_steps), 1)
         self.timeslice_fraction = timeslice_fraction
-
-        # calling the methods based on the defined mode by the user
+            
         if self.model_data.settings.mode == ModelMode.Planning:
             self._set_regional_objective_planning()
 
@@ -114,6 +124,7 @@ class BuildModel:
             else:
                 self._set_lines_objective_operation()
                 self._set_final_objective_multinode()
+                    
 
     def _solve(self, verbosity, solver, **kwargs):
 
@@ -141,15 +152,25 @@ class BuildModel:
                         "cost_fix_line",
                         "cost_decom_line",
                         "cost_variable_line",
+                        "tot_cost_multi_node"
                     ]
                 else:
                     to_add = [
                         "line_totalcapacity",
                         "cost_fix_line",
                         "cost_variable_line",
+                        "tot_cost_multi_node"
                     ]
+            else:
+                to_add = [
+                    "tot_cost_single_node"
+                    ]
+
+                
             if self.model_data.settings.mode == ModelMode.Planning:
                 to_add.extend(PLANNING_RESULTS)
+            if self.model_data.settings.multi_node:
+                to_add.extend(MULTI_NODE_RESULTS)
 
             res.extend(to_add)
             result_collector = namedtuple("result", res)
@@ -202,6 +223,9 @@ class BuildModel:
                             totalcost_regional += cp.sum(
                                 self.vars.emission_cost_by_region[reg][emission_type][ctgry], axis=1
                             )
+            for carr in self.vars.unmetdemandbycarrier[reg].keys():
+                            
+                totalcost_regional += cp.sum(self.vars.cost_unmet_demand[reg][carr],axis=1)                
 
             discount_factor = (
                 1 + self.model_data.regional_parameters[reg]["discount_rate"]["Annual Discount Rate"].values
@@ -211,6 +235,33 @@ class BuildModel:
                 totalcost_regional, np.power(discount_factor, years)
             )
             self.totalcost_allregions += totalcost_regional_discounted
+            
+    def _set_regional_emission_objective(self):
+        """
+        Calculates the regional emission objective function in the planning mode
+        """
+        self.totalemission_allregions = np.zeros((len(self.model_data.settings.years), 1))
+        
+        for reg in self.model_data.settings.regions:
+            
+            totalemission_regional = np.zeros((len(self.model_data.settings.years), 1))
+            
+            for emission_type in get_emission_types(self.model_data.settings.global_settings):
+                
+                totalemission_regional_by_type = np.zeros((len(self.model_data.settings.years), 1))
+                
+                for ctgry in self.model_data.settings.technologies[reg].keys():
+
+                    if ctgry != "Demand" and ctgry != "Transmission" and ctgry != "Storage":
+                        
+                        totalemission_regional_by_type += cp.sum(
+                            self.vars.emission_by_region[reg][emission_type][ctgry], axis=1
+                        )
+                        
+                totalemission_regional += totalemission_regional_by_type
+                
+            self.totalemission_allregions += totalemission_regional
+            
 
     def _set_regional_objective_operation(self):
 
@@ -238,6 +289,10 @@ class BuildModel:
                             totalcost_regional += cp.sum(
                                 self.vars.emission_cost_by_region[reg][emission_type][ctgry], axis=1
                             )
+                            
+            for carr in self.vars.unmetdemandbycarrier[reg].keys():
+                            
+                totalcost_regional += cp.sum(self.vars.cost_unmet_demand[reg][carr],axis=1) 
 
             self.totalcost_allregions += totalcost_regional
 
@@ -284,7 +339,7 @@ class BuildModel:
         operation mode
         """
 
-        self.totalcost_lines = np.zeros((len(self.model_data.settings.years), 1))
+        self.totalcost_lines = 0
 
         for line in self.model_data.settings.lines_list:
 
@@ -328,3 +383,15 @@ class BuildModel:
         elif self.model_data.settings.mode == ModelMode.Operation:
 
             self.global_objective = self.totalcost_allregions + self.totalcost_lines
+            
+    def _set_final_emission_objective(self):
+
+        """
+        Calculates the overall emission objective function 
+        """
+        if self.model_data.settings.mode == ModelMode.Planning:
+            self.global_emission_objective = cp.sum(self.totalemission_allregions)
+
+        elif self.model_data.settings.mode == ModelMode.Operation:
+
+            self.global_emission_objective = cp.sum(self.totalemission_allregions)
